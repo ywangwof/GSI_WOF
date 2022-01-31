@@ -1,0 +1,167 @@
+Performing C SOURCE FILE Test OpenMP_FLAG_DETECTED failed with the following output:
+Change Dir: /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/bin/gmake "cmTryCompileExec2917886297/fast"
+/bin/gmake -f CMakeFiles/cmTryCompileExec2917886297.dir/build.make CMakeFiles/cmTryCompileExec2917886297.dir/build
+gmake[1]: Entering directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2917886297.dir/src.c.o
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icc   -DOpenMP_FLAG_DETECTED -openmp   -o CMakeFiles/cmTryCompileExec2917886297.dir/src.c.o   -c /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.c
+icc: command line error: option '-openmp' is not supported. Please use the replacement option '-qopenmp'
+gmake[1]: *** [CMakeFiles/cmTryCompileExec2917886297.dir/src.c.o] Error 1
+gmake[1]: Leaving directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+gmake: *** [cmTryCompileExec2917886297/fast] Error 2
+
+Source file was:
+
+#include <omp.h>
+int main() {
+#ifdef _OPENMP
+  return 0;
+#else
+  breaks_on_purpose
+#endif
+}
+
+Performing C SOURCE FILE Test OpenMP_FLAG_DETECTED failed with the following output:
+Change Dir: /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/bin/gmake "cmTryCompileExec3064647671/fast"
+/bin/gmake -f CMakeFiles/cmTryCompileExec3064647671.dir/build.make CMakeFiles/cmTryCompileExec3064647671.dir/build
+gmake[1]: Entering directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3064647671.dir/src.c.o
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icc   -DOpenMP_FLAG_DETECTED   -o CMakeFiles/cmTryCompileExec3064647671.dir/src.c.o   -c /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.c
+/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.c(7): error: identifier "breaks_on_purpose" is undefined
+    breaks_on_purpose
+    ^
+
+/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.c(9): error: expected a ";"
+  }
+  ^
+
+compilation aborted for /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.c (code 2)
+gmake[1]: *** [CMakeFiles/cmTryCompileExec3064647671.dir/src.c.o] Error 2
+gmake[1]: Leaving directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+gmake: *** [cmTryCompileExec3064647671/fast] Error 2
+
+Source file was:
+
+#include <omp.h>
+int main() {
+#ifdef _OPENMP
+  return 0;
+#else
+  breaks_on_purpose
+#endif
+}
+
+Performing C++ SOURCE FILE Test OpenMP_FLAG_DETECTED failed with the following output:
+Change Dir: /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/bin/gmake "cmTryCompileExec1222043562/fast"
+/bin/gmake -f CMakeFiles/cmTryCompileExec1222043562.dir/build.make CMakeFiles/cmTryCompileExec1222043562.dir/build
+gmake[1]: Entering directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec1222043562.dir/src.cxx.o
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icpc    -DOpenMP_FLAG_DETECTED -openmp   -o CMakeFiles/cmTryCompileExec1222043562.dir/src.cxx.o -c /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.cxx
+icpc: command line error: option '-openmp' is not supported. Please use the replacement option '-qopenmp'
+gmake[1]: *** [CMakeFiles/cmTryCompileExec1222043562.dir/src.cxx.o] Error 1
+gmake[1]: Leaving directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+gmake: *** [cmTryCompileExec1222043562/fast] Error 2
+
+Source file was:
+
+#include <omp.h>
+int main() {
+#ifdef _OPENMP
+  return 0;
+#else
+  breaks_on_purpose
+#endif
+}
+
+Performing C++ SOURCE FILE Test OpenMP_FLAG_DETECTED failed with the following output:
+Change Dir: /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/bin/gmake "cmTryCompileExec3147359069/fast"
+/bin/gmake -f CMakeFiles/cmTryCompileExec3147359069.dir/build.make CMakeFiles/cmTryCompileExec3147359069.dir/build
+gmake[1]: Entering directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec3147359069.dir/src.cxx.o
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icpc    -DOpenMP_FLAG_DETECTED   -o CMakeFiles/cmTryCompileExec3147359069.dir/src.cxx.o -c /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.cxx
+/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.cxx(7): error: identifier "breaks_on_purpose" is undefined
+    breaks_on_purpose
+    ^
+
+/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.cxx(9): error: expected a ";"
+  }
+  ^
+
+compilation aborted for /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/src.cxx (code 2)
+gmake[1]: *** [CMakeFiles/cmTryCompileExec3147359069.dir/src.cxx.o] Error 2
+gmake[1]: Leaving directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+gmake: *** [cmTryCompileExec3147359069/fast] Error 2
+
+Source file was:
+
+#include <omp.h>
+int main() {
+#ifdef _OPENMP
+  return 0;
+#else
+  breaks_on_purpose
+#endif
+}
+
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/bin/gmake "cmTryCompileExec2373135617/fast"
+/bin/gmake -f CMakeFiles/cmTryCompileExec2373135617.dir/build.make CMakeFiles/cmTryCompileExec2373135617.dir/build
+gmake[1]: Entering directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2373135617.dir/CheckSymbolExists.c.o
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icc    -o CMakeFiles/cmTryCompileExec2373135617.dir/CheckSymbolExists.c.o   -c /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec2373135617
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2373135617.dir/link.txt --verbose=1
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icc       CMakeFiles/cmTryCompileExec2373135617.dir/CheckSymbolExists.c.o  -o cmTryCompileExec2373135617 -rdynamic 
+CMakeFiles/cmTryCompileExec2373135617.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x23): undefined reference to `pthread_create'
+gmake[1]: *** [cmTryCompileExec2373135617] Error 1
+gmake[1]: Leaving directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+gmake: *** [cmTryCompileExec2373135617/fast] Error 2
+
+File /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp
+
+Run Build Command:/bin/gmake "cmTryCompileExec3321553840/fast"
+/bin/gmake -f CMakeFiles/cmTryCompileExec3321553840.dir/build.make CMakeFiles/cmTryCompileExec3321553840.dir/build
+gmake[1]: Entering directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3321553840.dir/CheckFunctionExists.c.o
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTryCompileExec3321553840.dir/CheckFunctionExists.c.o   -c /usr/share/cmake/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec3321553840
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3321553840.dir/link.txt --verbose=1
+/apps/intel/parallel_studio_xe_2018.4.057/compilers_and_libraries_2018/linux/bin/intel64/icc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTryCompileExec3321553840.dir/CheckFunctionExists.c.o  -o cmTryCompileExec3321553840 -rdynamic -lpthreads 
+ld: cannot find -lpthreads
+gmake[1]: *** [cmTryCompileExec3321553840] Error 1
+gmake[1]: Leaving directory `/mnt/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF/build/CMakeFiles/CMakeTmp'
+gmake: *** [cmTryCompileExec3321553840/fast] Error 2
+
+

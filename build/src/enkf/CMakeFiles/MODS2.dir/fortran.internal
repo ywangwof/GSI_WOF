@@ -1,0 +1,5 @@
+# The fortran modules provided by this target.
+provides
+ gridio
+ read_fv3regional_restarts
+ write_fv3regional_restarts

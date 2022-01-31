@@ -1,0 +1,6 @@
+09/08/2021
+
+  Copied from Jet using command
+  $> mysync dtn:/lfs4/NAGAPE/hpc-wof1/ywang/EPIC2/oumap/GSI_WoF . 
+
+  It is OU MAP version of GSI used for EnKF cycling.
