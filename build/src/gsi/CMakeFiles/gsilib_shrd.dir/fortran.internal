@@ -1,6 +1,0 @@
-# The fortran modules provided by this target.
-provides
- kinds
- mpeu_mpif
- mpeu_util
- mpimod
