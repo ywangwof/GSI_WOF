@@ -151,9 +151,9 @@ contains
     integer(i_kind) indx_p25,indx_dust1,indx_dust2,ip25_av,idust1_av,idust2_av
 
 !   initialize variables
-    icloud_fwd=.false.
-    icloud_cv=.false.
-    iallsky=.false.
+    icloud_fwd=.true.
+    icloud_cv=.true.
+    iallsky=.true.
     cw_cv=.false.
     ql_cv=.false.
 

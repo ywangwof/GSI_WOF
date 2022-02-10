@@ -1,10 +1,10 @@
 subroutine setuprhsall(ndata,mype,init_pass,last_pass)
 !$$$  subprogram documentation block
 !                .      .    .                                       .
-! subprogram:  setuprhsall   sets up rhs of oi 
+! subprogram:  setuprhsall   sets up rhs of oi
 !   prgmmr: derber           org: np23                date: 2003-05-22
 !
-! abstract: This routine sets up the right hand side (rhs) of the 
+! abstract: This routine sets up the right hand side (rhs) of the
 !           analysis equation.  Functions performed in this routine
 !           include:
 !             a) calculate increments between current solutions and obs,
@@ -20,7 +20,7 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
 !   2004-07-29  treadon - add only to module use, add intent in/out
 !   2004-10-06  parrish - increase dimension of work arrays for nonlin qc
 !   2004-12-08  xu li   - replace local logical flag retrieval with that in radinfo
-!   2004-12-22  treadon - restructure code to compute and write out 
+!   2004-12-22  treadon - restructure code to compute and write out
 !                         innovation information on select outer iterations
 !   2005-01-20  okamoto - add ssmi/amsre/ssmis
 !   2005-03-30  lpchang - statsoz call was passing ozmz var unnecessarily
@@ -44,7 +44,7 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
 !   2006-07-31  kleist - change call to atm arrays routines
 !   2007-02-21  sienkiewicz - add MLS ozone changes
 !   2007-03-01  treadon - add toss_gps and toss_gps_sub
-!   2007-03-10      su - move the observation perturbation to each setup routine 
+!   2007-03-10      su - move the observation perturbation to each setup routine
 !   2007-03-19  tremolet - Jo table
 !   2007-06-05  tremolet - add observation diagnostics structure
 !   2007-06-08  kleist/treadon - add prefix (task id or path) to diag_conv_file
@@ -71,7 +71,7 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
 !   2009-10-22     shen - add high_gps and high_gps_sub
 !   2009-12-08  guo     - fixed diag_conv output rewind while is not init_pass, with open(position='rewind')
 !   2010-04-09  cucurull - remove high_gps and high_gps_sub
-!   2010-04-01  tangborn - start adding call for carbon monoxide data. 
+!   2010-04-01  tangborn - start adding call for carbon monoxide data.
 !   2010-04-28      zhu - add ostats and rstats for additional precoditioner
 !   2010-05-28  todling - obtain variable id's on the fly (add getindex)
 !   2010-10-14  pagowski - added pm2_5 conventional obs
@@ -94,8 +94,12 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
 !   2015-10-01  guo   - full res obvsr: index to allow redistribution of obsdiags
 !   2016-05-05  pondeca - add uwnd10m, vwund10m
 !   2017-05-12  Y. Wang and X. Wang - add dbz for reflectivity DA. POC: xuguang.wang@ou.edu
+!   2017-01-01  Jones - Add Cloud water path
+!   2018-01-01  Jones/JJH - Add dewpoint
+!   2018-01-01  JJH - Add Doppler wind lidar
+!   2018-02-15  wu      - add code for fv3_regional
 !   2018-01-01  Apodaca - add GOES/GLM lightning
-!   2018-02-15  wu      - add code for fv3_regional 
+!   2018-02-15  wu      - add code for fv3_regional
 !   2018-08-10  guo     - replaced type specific setupXYZ() calls with a looped
 !                         polymorphic implementation using %setup().
 !   2019-03-15  Ladwig  - add option for cloud analysis in observer
@@ -167,7 +171,7 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
   use m_rhs, only: i_ps,i_uv,i_t,i_q,i_pw,i_rw,i_dw,i_gps,i_sst,i_tcp,i_lag, &
                    i_gust,i_vis,i_pblh,i_wspd10m,i_td2m,i_mxtm,i_mitm,i_pmsl,i_howv, &
                    i_tcamt,i_lcbas,i_cldch,i_uwnd10m,i_vwnd10m,i_swcp,i_lwcp
-  use m_rhs, only: i_dbz
+  use m_rhs, only: i_dbz, i_cwp, i_td
   use m_rhs, only: i_light
 
   use m_gpsStats, only: gpsStats_genstats       ! was genstats_gps()
@@ -322,8 +326,8 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
   endif ! <init_pass>
 
 ! The 3d pressure and geopotential grids are initially loaded at
-! the end of the call to read_guess.  Thus, we don't need to call 
-! load_prsges and load_geop_hgt on the first outer loop.  We need 
+! the end of the call to read_guess.  Thus, we don't need to call
+! load_prsges and load_geop_hgt on the first outer loop.  We need
 ! to update these 3d pressure arrays on all subsequent outer loops.
 ! Hence, the conditional call to load_prsges and load_geop_hgt
 
@@ -357,7 +361,7 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
       if (l_PBL_pseudo_SurfobsT .or. l_PBL_pseudo_SurfobsQ .or. l_PBL_pseudo_SurfobsUV) then
          call load_gsdpbl_hgt(mype)
       end if
-   endif   
+   endif
 
 
 ! Compute derived quantities on grid
@@ -384,8 +388,8 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
      lunin=1
      open(lunin,file=obs_setup,form='unformatted')
      rewind lunin
- 
-  
+
+
 !    If requested, create conventional diagnostic files
      if(conv_diagsave.and.binary_diag)then
         write(string,900) jiter
@@ -592,10 +596,10 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
        mpi_comm_world,ierror)
 
 ! Collect conventional data statistics
-  
+
   call mpi_allreduce(bwork,bwork1,size(bwork1),mpi_rtype,mpi_sum,&
        mpi_comm_world,ierror)
-  
+
   call mpi_allreduce(awork,awork1,size(awork1),mpi_rtype,mpi_sum, &
        mpi_comm_world,ierror)
 
@@ -623,9 +627,9 @@ subroutine setuprhsall(ndata,mype,init_pass,last_pass)
 
 !    Compute and print statistics for "conventional" data
      call statsconv(mype,&
-          i_ps,i_uv,i_t,i_q,i_pw,i_rw,i_dw,i_gps,i_sst,i_tcp,i_lag, &
+          i_ps,i_uv,i_t,i_q,i_pw,i_rw,i_cwp,i_td,i_dw,i_gps,i_sst,i_tcp,i_lag, &
           i_gust,i_vis,i_pblh,i_wspd10m,i_td2m,i_mxtm,i_mitm,i_pmsl,i_howv, &
-          i_tcamt,i_lcbas,i_cldch,i_uwnd10m,i_vwnd10m,i_swcp,i_lwcp,i_dbz, &
+          i_tcamt,i_lcbas,i_cldch,i_uwnd10m,i_vwnd10m,i_swcp,i_lwcp,i_dbz,    &
           size(awork1,2),bwork1,awork1,ndata)
 
 !     Compute and print statistics for "lightning" data

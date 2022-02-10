@@ -31,7 +31,7 @@ use gsi_obOperTypeManager, only: obOper_typeInfo
 use gsi_obOperTypeManager, only: &
   iobOper_t,          iobOper_pw,         iobOper_q,                                                    &
                                           iobOper_cldtot,     iobOper_w,          iobOper_dw,           &
-  iobOper_rw,         iobOper_dbz,                                                                      &
+  iobOper_rw,                                                                               &
                       iobOper_spd,        iobOper_oz,         iobOper_o3l,        iobOper_colvk,        &
   iobOper_pm2_5,      iobOper_pm10,       iobOper_ps,         iobOper_tcp,        iobOper_sst,          &
   iobOper_gpsbend,    iobOper_gpsref,                                                                   &
@@ -39,7 +39,7 @@ use gsi_obOperTypeManager, only: &
   iobOper_vis,        iobOper_pblh,       iobOper_wspd10m,    iobOper_td2m,       iobOper_mxtm,         &
   iobOper_mitm,       iobOper_pmsl,       iobOper_howv,       iobOper_tcamt,      iobOper_lcbas,        &
   iobOper_cldch,      iobOper_uwnd10m,    iobOper_vwnd10m,    iobOper_swcp,       iobOper_lwcp,         &
-  iobOper_light
+  iobOper_light,      iobOper_dbz,        iobOper_cwp,        iobOper_td
 use kinds, only: i_kind
 use mpeu_util, only: perr,die
 
@@ -60,7 +60,7 @@ end interface
 integer(i_kind),parameter,dimension(obOper_count):: ix_obtype = (/ &
   iobOper_t,          iobOper_pw,         iobOper_q,                                                    &
                                           iobOper_cldtot,     iobOper_w,          iobOper_dw,           &
-  iobOper_rw,         iobOper_dbz,                                                                      &
+  iobOper_rw,                                                                               &
                       iobOper_spd,        iobOper_oz,         iobOper_o3l,        iobOper_colvk,        &
   iobOper_pm2_5,      iobOper_pm10,       iobOper_ps,         iobOper_tcp,        iobOper_sst,          &
   iobOper_gpsbend,    iobOper_gpsref,                                                                   &
@@ -68,7 +68,7 @@ integer(i_kind),parameter,dimension(obOper_count):: ix_obtype = (/ &
   iobOper_vis,        iobOper_pblh,       iobOper_wspd10m,    iobOper_td2m,       iobOper_mxtm,         &
   iobOper_mitm,       iobOper_pmsl,       iobOper_howv,       iobOper_tcamt,      iobOper_lcbas,        &
   iobOper_cldch,      iobOper_uwnd10m,    iobOper_vwnd10m,    iobOper_swcp,       iobOper_lwcp,         &
-  iobOper_light                                                                                         /)
+  iobOper_light,      iobOper_dbz,        iobOper_cwp,        iobOper_td                                                                                         /)
 !...|....1....|....2....|....3....|....4....|....5....|....6....|....7....|....8....|....9....|....0
 
 character(len=*),parameter:: myname="intjomod"
@@ -94,14 +94,14 @@ subroutine intjo_(rval,qpred,sval,sbias)
 !
 !          Po = Wnotgross*exp(-.5*(Hn(x+xb) - yo)**2 ) + Wgross
 !            with
-!                Hn = the forward model (possibly non-linear) normalized by 
+!                Hn = the forward model (possibly non-linear) normalized by
 !                     observation error
 !                x  = the current estimate of the analysis increment
 !                xb = the background state
 !                yo = the observation normalized by observation error
 !
-!            Note:  The factor 2 in definition of Jo is present because the 
-!                   penalty Jo as used in this code is 2*(usual definition 
+!            Note:  The factor 2 in definition of Jo is present because the
+!                   penalty Jo as used in this code is 2*(usual definition
 !                   of penalty)
 !
 !          Wgross = Pgross*cg
@@ -114,13 +114,13 @@ subroutine intjo_(rval,qpred,sval,sbias)
 !
 !          cg = sqrt(2*pi)/2b
 !
-!          b = possible range of variable for gross errors, normalized by 
+!          b = possible range of variable for gross errors, normalized by
 !              observation error
 !
 !    The values for the above parameters that Bill Collins used in the
 !    eta 3dvar are:
 !
-!          cg = cg_term/b, where cg_term = sqrt(2*pi)/2 
+!          cg = cg_term/b, where cg_term = sqrt(2*pi)/2
 !
 !          b = 10.        ! range for gross errors, normalized by obs error
 !
@@ -137,18 +137,18 @@ subroutine intjo_(rval,qpred,sval,sbias)
 !                                             T
 !        gradx(Jo) = - (sum over observations) 2*H (Hn(x+xb)-yo)*(Po - Wgross)/Po
 !
-!      where, 
+!      where,
 !
 !          H = tangent linear model of Hn about x+xb
 !
-! 
+!
 !    Note that if Pgross = 0.0, then Wnotgross=1.0 and Wgross=0.0.  That is,
 !    the code runs as though nonlinear quality control were not present
-!    (which is indeed the case since the gross error probability is 0).  
+!    (which is indeed the case since the gross error probability is 0).
 !
 !    As a result the same int* routines may be used for use with or without
 !    nonlinear quality control.
-!    
+!
 !
 ! program history log:
 !   2003-12-18  derber
@@ -157,7 +157,7 @@ subroutine intjo_(rval,qpred,sval,sbias)
 !   2004-10-06  parrish - add nonlinear qc option
 !   2004-10-06  kleist  - separate control vector for u,v, & convert int
 !                         for wind components into int for st,vp
-!   2004-11-30  treadon - add brightness temperatures to nonlinear 
+!   2004-11-30  treadon - add brightness temperatures to nonlinear
 !                         quality control
 !   2004-12-03  treadon - replace mpe_iallreduce (IBM extension) with
 !                         standard mpi_allreduce
@@ -196,7 +196,7 @@ subroutine intjo_(rval,qpred,sval,sbias)
 !   2010-10-20  hclin    - added aod
 !   2011-02-20  zhu      - add intgust,intvis,intpblh calls
 !   2013-05-20  zhu      - add codes related to aircraft temperature bias correction
-!   2014-06-18  carley/zhu - add lcbas and tcamt 
+!   2014-06-18  carley/zhu - add lcbas and tcamt
 !   2014-03-19  pondeca  - add intwspd10m
 !   2014-04-10  pondeca  - add inttd2m,intmxtm,intmitm,intpmsl
 !   2014-05-07  pondeca  - add inthowv
@@ -211,7 +211,7 @@ subroutine intjo_(rval,qpred,sval,sbias)
 !     rval
 !     qpred
 !
-!   output argument list:      
+!   output argument list:
 !     rval     - RHS on grid
 !     qpred
 !
@@ -220,12 +220,12 @@ subroutine intjo_(rval,qpred,sval,sbias)
 !         are all grid fields after strong initialization.
 !
 !     2) The two interfaces to the int-routines should be temporary.
-!        In the framework of the 4dvar-code, foto can be re-implemented as 
+!        In the framework of the 4dvar-code, foto can be re-implemented as
 !        an approximate M and M' to the model matrices in 4dvar. Once that
 !        is done, the int-routines should no longer need the time derivatives.
 !        (Todling)
 !     3) Notice that now (2010-05-13) int routines handle non-essential
-!        variables internally; also, when pointers non-existent, int routines 
+!        variables internally; also, when pointers non-existent, int routines
 !        simply return (Todling).
 !
 ! attributes:

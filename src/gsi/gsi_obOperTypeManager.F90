@@ -1,3 +1,4 @@
+
 module gsi_obOperTypeManager
 !$$$  subprogram documentation block
 !                .      .    .                                       .
@@ -66,6 +67,8 @@ module gsi_obOperTypeManager
 
   use gsi_lightOper   , only: lightOper
   use gsi_dbzOper     , only: dbzOper
+  use gsi_cwpOper     , only: cwpOper
+  use gsi_tdOper      , only: tdOper
   use gsi_cldtotOper  , only: cldtotOper
 
   use kinds     , only: i_kind
@@ -136,6 +139,8 @@ module gsi_obOperTypeManager
   public:: iobOper_lwcp
   public:: iobOper_light
   public:: iobOper_dbz
+  public:: iobOper_cwp
+  public:: iobOper_td
   public:: iobOper_cldtot
 
   enum, bind(C)
@@ -181,6 +186,8 @@ module gsi_obOperTypeManager
     enumerator:: iobOper_lwcp
     enumerator:: iobOper_light
     enumerator:: iobOper_dbz
+    enumerator:: iobOper_cwp
+    enumerator:: iobOper_td
     enumerator:: iobOper_cldtot
 
     enumerator:: iobOper_extra_
@@ -242,6 +249,8 @@ module gsi_obOperTypeManager
   type(   lwcpOper), target, save::     lwcpOper_mold
   type(  lightOper), target, save::    lightOper_mold
   type(    dbzOper), target, save::      dbzOper_mold
+  type(    cwpOper), target, save::      cwpOper_mold
+  type(    tdOper),  target, save::      tdOper_mold
   type( cldtotOper), target, save::   cldtotOper_mold
 
 contains
@@ -252,13 +261,13 @@ function dtype2index_(dtype) result(index_)
   character(len=*),intent(in):: dtype
 
   select case(lowercase(dtype))
-  case("ps"     ,"[psoper]"     ); index_= iobOper_ps
-  case("t"      ,"[toper]"      ); index_= iobOper_t
+  case("ps"     ,"[psoper]", "okps"     ); index_= iobOper_ps
+  case("t"      ,"[toper]"      ,"okt"); index_= iobOper_t
 
   case("w"      ,"[woper]"      ); index_= iobOper_w
-    case("uv"     ); index_= iobOper_w
+    case("uv", "okuv"     ); index_= iobOper_w
 
-  case("q"      ,"[qoper]"      ); index_= iobOper_q
+  case("q"      ,"[qoper]", "okq"      ); index_= iobOper_q
   case("spd"    ,"[spdoper]"    ); index_= iobOper_spd
   case("rw"     ,"[rwoper]"     ); index_= iobOper_rw
   case("dw"     ,"[dwoper]"     ); index_= iobOper_dw
@@ -387,6 +396,9 @@ function dtype2index_(dtype) result(index_)
 
   case("dbz"    ,"[dbzoper]"    ); index_= iobOper_dbz
 
+  case("cwp"    ,"[cwpoper]"    ); index_= iobOper_cwp
+  case("td"     ,"[tdoper]", "oktd"    );  index_= iobOper_td
+
   case("cldtot" ,"[cldtotoper]" ); index_= iobOper_cldtot
     case("mta_cld"  ); index_= iobOper_cldtot
 
@@ -483,6 +495,8 @@ function index2vmold_(iobOper) result(vmold_)
   case(iobOper_lwcp     ); vmold_ =>    lwcpOper_mold
   case(iobOper_light    ); vmold_ =>   lightOper_mold
   case(iobOper_dbz      ); vmold_ =>     dbzOper_mold
+  case(iobOper_cwp      ); vmold_ =>     cwpOper_mold
+  case(iobOper_td       ); vmold_ =>     tdOper_mold
   case(iobOper_cldtot   ); vmold_ =>  cldtotOper_mold
 
   case( obOper_undef    ); vmold_ => null()
@@ -598,6 +612,8 @@ subroutine cobstype_config_()
     cobstype(iobOper_lwcp       )  ="lwcp                " ! lwcp_ob_type
     cobstype(iobOper_light      )  ="light               " ! light_ob_type
     cobstype(iobOper_dbz        )  ="dbz                 " ! dbz_ob_type
+    cobstype(iobOper_cwp        )  ="cwp                 " ! cwp_ob_type
+    cobstype(iobOper_td         )  ="td                  " ! td_ob_type
     cobstype(iobOper_cldtot     )  ="cldtot              " ! using q_ob_type
 
   cobstype_configured_=.true.

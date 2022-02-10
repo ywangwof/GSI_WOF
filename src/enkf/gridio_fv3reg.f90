@@ -3,7 +3,7 @@ module gridio
   !========================================================================
 
   !$$$ Module documentation block
-  ! 
+  !
   ! This module contains various routines to ingest and update
   ! variables from Weather Research and Forecasting (WRF) model Advanced
   ! Research WRF (ARW) and Non-hydrostatic Mesoscale Model (NMM) dynamical
@@ -14,10 +14,10 @@ module gridio
   ! prgmmr: Winterbottom        org: ESRL/PSD1       date: 2011-11-30
   !
   ! program history log:
-  !   
+  !
   !   2011-11-30 Winterbottom - Initial version.
   !
-  !   2019-01- Ting  --  modified for fv3sar  
+  !   2019-01- Ting  --  modified for fv3sar
   !   2021-04     Y. Wang & X. Wang - changes for radar DA
   ! attributes:
   !   language:  f95
@@ -71,7 +71,7 @@ contains
 
 
 
-    ! Define local variables 
+    ! Define local variables
     character(len=500) :: filename
     character(len=:),allocatable :: fv3filename,fv3filename_tracer,fv3filename_phyvar
     character(len=7)   :: charnanal
@@ -84,8 +84,8 @@ contains
 
     ! Define variables required for netcdf variable I/O
     character(len=12) :: varstrname
-     
-   
+
+
     character(len=1) char_tile
     character(len=24),parameter :: myname_ = 'fv3: getgriddata'
 
@@ -93,7 +93,7 @@ contains
     integer :: nlevsp1
     integer :: i,j, k,nn,ntile,nn_tile0, nb,nanal,ne
     integer :: u_ind, v_ind, tv_ind,tsen_ind, q_ind, oz_ind
-    integer :: w_ind, ql_ind,qr_ind,qi_ind,qs_ind,qg_ind,dbz_ind
+    integer :: w_ind, ql_ind,qr_ind,qi_ind,qs_ind,qg_ind,qh_ind,dbz_ind
     integer :: ps_ind, sst_ind
     integer :: tmp_ind
     logical :: ice
@@ -114,6 +114,7 @@ contains
     qi_ind   = getindex(vars3d, 'qi')   ! QI (3D)
     qs_ind   = getindex(vars3d, 'qs')   ! QS (3D)
     qg_ind   = getindex(vars3d, 'qg')   ! QG (3D)
+    qh_ind   = getindex(vars3d, 'qh')   ! QH (3D)
     dbz_ind   = getindex(vars3d, 'dbz')   ! DBZ (3D)
 
     ps_ind  = getindex(vars2d, 'ps')  ! Ps (2D)
@@ -166,7 +167,7 @@ contains
 
     !----------------------------------------------------------------------
     ! Update u and v variables (same for NMM and ARW)
-  
+
     if (u_ind > 0) then
     allocate(uworkvar3d(nx_res,ny_res+1,nlevs))
       varstrname = 'u'
@@ -177,7 +178,7 @@ contains
         do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            vargrid(nn,levels(u_ind-1)+k,nb,ne)=uworkvar3d(i,j,k) 
+            vargrid(nn,levels(u_ind-1)+k,nb,ne)=uworkvar3d(i,j,k)
          enddo
         enddo
       enddo
@@ -198,7 +199,7 @@ contains
        do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            vargrid(nn,levels(v_ind-1)+k,nb,ne)=vworkvar3d(i,j,k) 
+            vargrid(nn,levels(v_ind-1)+k,nb,ne)=vworkvar3d(i,j,k)
          enddo
        enddo
     enddo
@@ -250,7 +251,7 @@ contains
              enddo
 
     endif
-        
+
 
     if (tv_ind > 0.or.tsen_ind>0) then
        allocate(tsenworkvar3d(nx_res,ny_res,nlevs))
@@ -271,18 +272,18 @@ contains
         if(tsen_ind > 0) then
            workvar3d=tsenworkvar3d
         endif
-           tmp_ind=max(tv_ind,tsen_ind) !then can't be both >0 
+           tmp_ind=max(tv_ind,tsen_ind) !then can't be both >0
            do k=1,nlevs
                nn = nn_tile0
              do j=1,ny_res
               do i=1,nx_res
                  nn=nn+1
-                 vargrid(nn,levels(tmp_ind-1)+k,nb,ne)=workvar3d(i,j,k) 
+                 vargrid(nn,levels(tmp_ind-1)+k,nb,ne)=workvar3d(i,j,k)
               enddo
              enddo
            enddo
            do k = levels(tmp_ind-1)+1, levels(tmp_ind)
-              if (nproc .eq. 0)   then                                           
+              if (nproc .eq. 0)   then
                  write(6,*) 'READFVregional : t ',                           &
                      & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
               endif
@@ -290,9 +291,9 @@ contains
 
       if(allocated(tsenworkvar3d)) deallocate(tsenworkvar3d)
      endif
-           
 
-    
+
+
    if (oz_ind > 0) then
        varstrname = 'o3mr'
        call read_fv3_restart_data3d(varstrname,fv3filename,file_id,workvar3d)
@@ -301,7 +302,7 @@ contains
         do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            vargrid(nn,levels(oz_ind-1)+k,nb,ne)=workvar3d(i,j,k) 
+            vargrid(nn,levels(oz_ind-1)+k,nb,ne)=workvar3d(i,j,k)
          enddo
         enddo
       enddo
@@ -352,7 +353,7 @@ contains
     enddo
 
     endif
-   
+
     if (qi_ind > 0) then
        varstrname = 'ice_wat'
        call read_fv3_restart_data3d(varstrname,fv3filename_tracer,file_id_t,workvar3d)
@@ -413,6 +414,26 @@ contains
 
     endif
 
+    if (qh_ind > 0) then
+       varstrname = 'hailwat'
+       call read_fv3_restart_data3d(varstrname,fv3filename_tracer,file_id_t,workvar3d)
+       do k=1,nlevs
+          nn = nn_tile0
+          do j=1,ny_res
+            do i=1,nx_res
+               nn=nn+1
+               vargrid(nn,levels(qh_ind-1)+k,nb,ne)=workvar3d(i,j,k)
+            enddo
+          enddo
+       enddo
+       do k = levels(qh_ind-1)+1, levels(qh_ind)
+           if (nproc .eq. 0)                                               &
+                write(6,*) 'READFVregional : qh ',                           &
+                    & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+
+    endif
+
     if (dbz_ind > 0) then
     allocate(workvar3d_tmp(nx_res-6,ny_res-6,nlevs))
        varstrname = 'ref_f3d'
@@ -457,14 +478,14 @@ contains
 
     !----------------------------------------------------------------------
     ! Allocate memory for variables computed within routine
- 
+
     if (ps_ind > 0) then
       allocate(workprsi(nx_res,ny_res,nlevsp1))
       allocate(pswork(nx_res,ny_res))
       fv3filename=trim(adjustl(filename))//"_dynvar"
       call nc_check( nf90_open(trim(adjustl(fv3filename)),nf90_nowrite,file_id),&
                       myname_,'open: '//trim(adjustl(fv3filename)) )
-      call read_fv3_restart_data3d('delp',fv3filename,file_id,workvar3d)  
+      call read_fv3_restart_data3d('delp',fv3filename,file_id,workvar3d)
        !print *,'min/max delp',ntile,minval(delp),maxval(delp)
       call nc_check( nf90_close(file_id),&
       myname_,'close '//trim(fv3filename) )
@@ -472,7 +493,7 @@ contains
       do i=nlevs,1,-1
         workprsi(:,:,i)=workvar3d(:,:,i)*0.01_r_kind+workprsi(:,:,i+1)
       enddo
- 
+
       pswork(:,:)=workprsi(:,:,1)
 
 
@@ -481,16 +502,16 @@ contains
       do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            vargrid(nn,levels(n3d)+ps_ind, nb,ne) =pswork(i,j) 
+            vargrid(nn,levels(n3d)+ps_ind, nb,ne) =pswork(i,j)
          enddo
       enddo
 
-      
-      
 
-      
+
+
+
       do k=1,nlevs
-        do j=1,ny_res  
+        do j=1,ny_res
          do i=1,nx_res
            workvar3d(i,j,k)=(workprsi(i,j,k)+workprsi(i,j,k+1))*half
          enddo
@@ -508,12 +529,12 @@ contains
       do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            qsat(nn,k,nb,ne)=qsatworkvar3d(i,j,k) 
+            qsat(nn,k,nb,ne)=qsatworkvar3d(i,j,k)
          enddo
       enddo
-            
+
       enddo
-          
+
 
 
 
@@ -524,12 +545,12 @@ contains
       if(allocated(qsatworkvar3d)) deallocate(qsatworkvar3d)
     endif
     !======================================================================
-    ! Deallocate memory 
+    ! Deallocate memory
     if(allocated(workvar3d))             deallocate(workvar3d)
      end do ! ntile loop
 
     end do backgroundloop ! loop over backgrounds to read in
-    end do ensmemloop ! loop over ens members to read in 
+    end do ensmemloop ! loop over ens members to read in
 
     return
 
@@ -546,7 +567,7 @@ end subroutine readgriddata
 
 subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid,no_inflate_flag)
     use constants, only: zero, one,fv,half
-    use gridinfo,only: eta1_ll,eta2_ll    
+    use gridinfo,only: eta1_ll,eta2_ll
     use params, only: nbackgrounds, anlfileprefixes, fgfileprefixes
     use params,   only: nx_res,ny_res,nlevs,ntiles,l_pres_add_saved
     use netcdf, only: nf90_open,nf90_close,nf90_get_var,nf90_noerr
@@ -554,7 +575,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
     use netcdf, only: nf90_write,nf90_write,nf90_inquire,nf90_inquire_dimension
     use write_fv3regional_restarts,only:write_fv3_restart_data1d,write_fv3_restart_data2d
     use write_fv3regional_restarts,only:write_fv3_restart_data3d,write_fv3_restart_data4d
-    include 'netcdf.inc'      
+    include 'netcdf.inc'
 
     !----------------------------------------------------------------------
     ! Define variables passed to subroutine
@@ -573,7 +594,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
 
     !----------------------------------------------------------------------
     integer(i_kind) :: u_ind, v_ind, tv_ind, tsen_ind,q_ind, ps_ind,oz_ind
-    integer(i_kind) :: w_ind, ql_ind,qr_ind,qi_ind,qs_ind,qg_ind,dbz_ind
+    integer(i_kind) :: w_ind, ql_ind,qr_ind,qi_ind,qs_ind,qg_ind,qh_ind,dbz_ind
 
     integer(i_kind) file_id,file_id_t,file_id_p
       real(r_single), dimension(:,:), allocatable ::pswork
@@ -595,7 +616,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
     integer :: i,j,k,nn,ntile,nn_tile0, nb,ne,nanal
 
 
-    
+
     write(6,*)"anlfileprefixes, fgfileprefixes are not used in the current implementation"
     write(6,*)"the no_inflate_flag is not used in the currrent implementation ",no_inflate_flag
     !----------------------------------------------------------------------
@@ -613,6 +634,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
     qi_ind   = getindex(vars3d, 'qi')   ! QI (3D)
     qs_ind   = getindex(vars3d, 'qs')   ! QS (3D)
     qg_ind   = getindex(vars3d, 'qg')   ! QG (3D)
+    qh_ind   = getindex(vars3d, 'qh')   ! QH (3D)
     dbz_ind   = getindex(vars3d, 'dbz')   ! DBZ (3D)
 
     ps_ind  = getindex(vars2d, 'ps')  ! Ps (2D)
@@ -668,14 +690,14 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
     if (u_ind > 0) then
        varstrname = 'u'
        allocate(uworkvar3d(nx_res,ny_res+1,nlevs))
-         
+
        call read_fv3_restart_data3d(varstrname,fv3filename,file_id,uworkvar3d)
       do k=1,nlevs
           nn = nn_tile0
       do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            workinc3d(i,j,k)=vargrid(nn,levels(u_ind-1)+k,nb,ne) 
+            workinc3d(i,j,k)=vargrid(nn,levels(u_ind-1)+k,nb,ne)
          enddo
       enddo
       enddo
@@ -689,14 +711,14 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
     if (v_ind > 0) then
        varstrname = 'v'
        allocate(vworkvar3d(nx_res+1,ny_res,nlevs))
-         
+
        call read_fv3_restart_data3d(varstrname,fv3filename,file_id,vworkvar3d)
       do k=1,nlevs
           nn = nn_tile0
       do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            workinc3d(i,j,k)=vargrid(nn,levels(v_ind-1)+k,nb,ne) 
+            workinc3d(i,j,k)=vargrid(nn,levels(v_ind-1)+k,nb,ne)
          enddo
       enddo
       enddo
@@ -743,7 +765,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
           where( qworkvar3d < 0.0_r_kind )
              qworkvar3d = 0.0_r_kind
           end where
- 
+
        workvar3d = qworkvar3d
        call write_fv3_restart_data3d(varstrname,fv3filename_tracer,file_id_t,workvar3d)
        do k=1,nlevs
@@ -754,7 +776,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
     end if
 
     if (tv_ind > 0.or.tsen_ind>0 ) then
-         
+
        varstrname = 'T'
       if(tsen_ind>0) then
       do k=1,nlevs
@@ -762,20 +784,20 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
       do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            workinc3d(i,j,k)=vargrid(nn,levels(tsen_ind-1)+k,nb,ne) 
+            workinc3d(i,j,k)=vargrid(nn,levels(tsen_ind-1)+k,nb,ne)
          enddo
       enddo
       enddo
        call read_fv3_restart_data3d(varstrname,fv3filename,file_id,workvar3d)
           workvar3d=workvar3d+workinc3d
        call write_fv3_restart_data3d(varstrname,fv3filename,file_id,workvar3d)
-     else  ! tv_ind >0  
+     else  ! tv_ind >0
       do k=1,nlevs
           nn = nn_tile0
       do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            workinc3d(i,j,k)=vargrid(nn,levels(tv_ind-1)+k,nb,ne) 
+            workinc3d(i,j,k)=vargrid(nn,levels(tv_ind-1)+k,nb,ne)
          enddo
       enddo
       enddo
@@ -811,14 +833,14 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
 
     if (oz_ind > 0) then
        varstrname = 'o3mr'
-         
+
        call read_fv3_restart_data3d(varstrname,fv3filename,file_id,workvar3d)
       do k=1,nlevs
           nn = nn_tile0
       do j=1,ny_res
          do i=1,nx_res
             nn=nn+1
-            workinc3d(i,j,k)=vargrid(nn,levels(oz_ind-1)+k,nb,ne) 
+            workinc3d(i,j,k)=vargrid(nn,levels(oz_ind-1)+k,nb,ne)
          enddo
       enddo
       enddo
@@ -850,7 +872,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
 
     if (qr_ind > 0) then
        varstrname = 'rainwat'
-       
+
        call read_fv3_restart_data3d(varstrname,fv3filename_tracer,file_id_t,workvar3d)
       do k=1,nlevs
           nn = nn_tile0
@@ -866,7 +888,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
            workvar3d = 0.0_r_kind
       end where
        call write_fv3_restart_data3d(varstrname,fv3filename_tracer,file_id_t,workvar3d)
-         
+
     endif
 
     if (qi_ind > 0) then
@@ -932,6 +954,27 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
 
     endif
 
+    if (qh_ind > 0) then
+       varstrname = 'hailwat'
+
+       call read_fv3_restart_data3d(varstrname,fv3filename_tracer,file_id_t,workvar3d)
+       do k=1,nlevs
+           nn = nn_tile0
+           do j=1,ny_res
+              do i=1,nx_res
+                 nn=nn+1
+                 workinc3d(i,j,k)=vargrid(nn,levels(qh_ind-1)+k,nb,ne)
+              enddo
+           enddo
+       enddo
+       workvar3d(1:nx_res,:,:)=workvar3d(1:nx_res,:,:)+workinc3d
+       where( workvar3d < 0.0_r_kind )
+            workvar3d = 0.0_r_kind
+       end where
+       call write_fv3_restart_data3d(varstrname,fv3filename_tracer,file_id_t,workvar3d)
+
+    endif
+
     if (dbz_ind > 0) then
        varstrname = 'ref_f3d'
        allocate(workvar3d_tmp(nx_res-6,ny_res-6,nlevs))
@@ -965,7 +1008,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
        allocate(workprsi(nx_res,ny_res,nlevsp1))
        allocate(pswork(nx_res,ny_res))
        varstrname = 'delp'
-      call read_fv3_restart_data3d(varstrname,filename,file_id,workvar3d)  
+      call read_fv3_restart_data3d(varstrname,filename,file_id,workvar3d)
       !print *,'min/max delp',ntile,minval(delp),maxval(delp)
       workprsi(:,:,nlevsp1)=eta1_ll(nlevsp1) !etal_ll is needed
       do i=nlevs,1,-1
@@ -999,11 +1042,11 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
        do k=1,nlevs
         workvar3d(:,:,k)=(workprsi(:,:,k)-workprsi(:,:,k+1))*100.0
        enddo
-        
+
 
        call write_fv3_restart_data3d(varstrname,filename,file_id,workvar3d)
      endif
- 
+
     call nc_check( nf90_close(file_id),&
       myname_,'close '//trim(fv3filename) )
 
@@ -1026,7 +1069,7 @@ subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid
 
 
 
-  
+
     end do backgroundloop ! loop over backgrounds to read in
     end do ensmemloop ! loop over ens members to read in
 

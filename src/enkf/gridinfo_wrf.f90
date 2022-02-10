@@ -3,8 +3,8 @@ module gridinfo
   !========================================================================
 
   !$$$ Module documentation block
-  ! 
-  ! This module contains various routines to ingest, define, and compute 
+  !
+  ! This module contains various routines to ingest, define, and compute
   ! variables from Weather Research and Forecasting (WRF) model Advanced
   ! Research WRF (ARW) and Non-hydrostatic Mesoscale Model (NMM) dynamical
   ! cores which are required by the Ensemble Kalman Filter (ENKF) currently
@@ -14,14 +14,15 @@ module gridinfo
   ! prgmmr: Winterbottom        org: ESRL/PSD1       date: 2011-11-30
   !
   ! program history log:
-  !   
+  !
   !   2011-11-30  Initial version.
-  !   2013-01-02  Updated subroutine getgridinfo_nmm.f90 such that the 
-  !               pressure profile (i.e., presslmn) is computed as it is in  
+  !   2013-01-02  Updated subroutine getgridinfo_nmm.f90 such that the
+  !               pressure profile (i.e., presslmn) is computed as it is in
   !               within the GSI subroutine get_wrf_nmm_ensperts.F90.
   !               Henry R. Winterbottom
   !   2017-05-12 Y. Wang and X. Wang - add more state variables in
   !                       cvars3d_supported for radar DA, POC: xuguang.wang@ou.edu
+  !  2018-12-05  Jones - Put hydrometeor variables back in. Also h_diabatic
   !
   ! attributes:
   !   language:  f95
@@ -75,8 +76,12 @@ module gridinfo
   public :: cross2dot
   public :: dot2cross
   ! supported variable names in anavinfo
-  character(len=max_varname_length),public, dimension(19) :: vars3d_supported = (/'u   ', 'v   ', 'tv  ', 'q   ', 'w   ', 'cw  ', 'ph  ', 'ql  ', 'qr  ', 'qs  ', 'qg  ', 'qi  ', 'qni ', 'qnr ', 'qnc ', 'dbz ', 'oz  ', 'tsen', 'prse' /)
-  character(len=max_varname_length),public, dimension(2)  :: vars2d_supported = (/ 'ps ', 'sst' /)
+  !character(len=max_varname_length),public, dimension(19) :: vars3d_supported = (/'u   ', 'v   ', 'tv  ', 'q   ', 'w   ', 'cw  ', 'ph  ', 'ql  ', 'qr  ', 'qs  ', 'qg  ', 'qi  ', 'qni ', 'qnr ', 'qnc ', 'dbz ', 'oz  ', 'tsen', 'prse' /)
+  !character(len=max_varname_length),public, dimension(2)  :: vars2d_supported = (/ 'ps ', 'sst' /)
+  character(len=max_varname_length),public, dimension(28) :: vars3d_supported = (/'u   ', 'v   ', 'tv  ', 't   ','q   ', 'w   ', 'cw  ', 'ph  ', 'mu ','oz  ', 'tsen', 'prse', &
+                                                                                  'ql  ', 'qr  ', 'qs  ', 'qi  ', 'qg  ', 'qh ', &
+                                                                                  'qnl ', 'qnr ', 'qns ', 'qni ', 'qng ', 'qnh ','qvg ', 'qvh ', 'dbz ', 'hd  ' /)
+  character(len=max_varname_length),public, dimension(6)  :: vars2d_supported = (/ 'ps ', 'sst','t2 ', 'q2 ', 'u10', 'v10' /)
 
 contains
 
@@ -117,7 +122,7 @@ contains
    ! Define variables returned by subroutine
     real(r_kind),      dimension(:,:),    allocatable :: presslmn
     real(r_kind),      dimension(:),      allocatable :: spressmn
-    
+
     ! Define variables computed within subroutine
     character(len=500)                                :: filename
     real,      dimension(:,:,:),  allocatable :: workgrid
@@ -132,7 +137,7 @@ contains
     character(len=20), dimension(3)                   :: dimstring
     integer,           dimension(3)                   :: dims
 
-    ! Define counting variables 
+    ! Define counting variables
     integer                                           :: i, j, k
     integer                                           :: count
 
@@ -145,7 +150,7 @@ contains
 
        ! Exit routine
        call stop2(22)
- 
+
     end if ! if(.not. arw .and. .not. nmm)
     ! Define local values and prepare for array dimension definitions
     dimstring(1) = "west_east"
@@ -171,7 +176,7 @@ contains
     ! Perform sanity and error checks for variable dimensions; proceed
     ! accordingly
     if (nlons .ne. nlonsin) then
-       write(6,*) 'Error reading input file in gridinfo...' 
+       write(6,*) 'Error reading input file in gridinfo...'
        write(6,*) '      nlons ingested from file = ', nlonsin
        write(6,*) '      nlons specified in namelist = ', nlons
        write(6,*) 'Failed in subroutine getgridinfo_arw; Aborting!'
@@ -181,7 +186,7 @@ contains
     end if ! if (nlons .ne. nlonsin)
 
     if (nlats .ne. nlatsin) then
-       write(6,*) 'Error reading input file in gridinfo...' 
+       write(6,*) 'Error reading input file in gridinfo...'
        write(6,*) '      nlats ingested from file = ', nlatsin
        write(6,*) '      nlats specified in namelist = ', nlats
        write(6,*) 'Failed in subroutine getgridinfo_arw; Aborting!'
@@ -191,7 +196,7 @@ contains
     end if ! if (nlats .ne. nlatsin)
 
     if (nlevs .ne. nlevsin) then
-       write(6,*) 'Error reading input file in gridinfo...' 
+       write(6,*) 'Error reading input file in gridinfo...'
        write(6,*) '      nlevs ingested from file = ', nlevsin
        write(6,*) '      nlevs specified in namelist = ', nlevs
        write(6,*) 'Failed in subroutine getgridinfo_arw; Aborting!'
@@ -246,7 +251,7 @@ contains
              ! Convert from degrees to radians and update the
              ! global longitude array
              lonsgrd(count) = workgrid(i,j,1)*deg2rad
-          
+
              count = count + 1
           end do ! do i = 1, dimensions%xdim
        end do ! do j = 1, dimensions%ydim
@@ -257,7 +262,7 @@ contains
        ! Allocate memory for local variable grid
        if(.not. allocated(workgrid)) allocate(workgrid(dimensions%xdim,  &
             & dimensions%ydim,1))
-       
+
        ! Ingest variable from external file
        varstringname = 'XLAT'
        call readnetcdfdata(filename,workgrid,varstringname,              &
@@ -282,7 +287,7 @@ contains
        if(allocated(workgrid)) deallocate(workgrid)
 
     !----------------------------------------------------------------------
-       
+
        ! Ingest the model vertical (eta) levels from the external file
        varstringname = 'ZNU'
        call readnetcdfdata(filename,wrfarw_znu,varstringname,1,1,           &
@@ -306,7 +311,7 @@ contains
        ! Ingest variable from external file
        varstringname = 'P_TOP'
        call readnetcdfdata(filename,workgrid,varstringname,1,1,1)
-    
+
        ! Define local variable
        ptop = workgrid(1,1,1)
 
@@ -348,10 +353,10 @@ contains
                 ! (dry hydrostatic pressure)
                 presslmn(count,k) = wrfarw_znu(1,1,k)*(wrfarw_mu(i,j,1) +   &
                      & wrfarw_mub(i,j,1)) + ptop*100.0
-             
+
                 ! Rescale pressure from Pa to hPa
                 presslmn(count,k) = presslmn(count,k)/100.0
-             
+
                 ! Compute the log of the pressure within the
                 ! respective layer
                 logp(count,k) = -log(presslmn(count,k))
@@ -400,7 +405,7 @@ contains
     if(.not. allocated(gridloc)) allocate(gridloc(3,npts))
 
     ! Loop through each grid coordinate and perform the coordinate
-    ! transform for regular simulation domains 
+    ! transform for regular simulation domains
 
     do nn = 1, npts
        ! Compute local variables
@@ -436,7 +441,7 @@ contains
     ! Define variables returned by subroutine
     real(r_kind),      dimension(:,:),    allocatable :: presslmn
     real(r_kind),      dimension(:),      allocatable :: spressmn
-    
+
     ! Define variables computed within subroutine
     character(len=500)                                :: filename
     real,      dimension(:,:,:),  allocatable         :: workgrid
@@ -451,7 +456,7 @@ contains
     character(len=20), dimension(3)                   :: dimstring
     integer,           dimension(3)                   :: dims
 
-    ! Define counting variables 
+    ! Define counting variables
     integer                                           :: i, j, k
     integer                                           :: count
 
@@ -490,7 +495,7 @@ contains
     ! Perform sanity and error checks for variable dimensions; proceed
     ! accordingly
     if (nlons .ne. nlonsin) then
-       write(6,*) 'Error reading input file in gridinfo...' 
+       write(6,*) 'Error reading input file in gridinfo...'
        write(6,*) '      nlons ingested from file = ', nlonsin
        write(6,*) '      nlons specified in namelist = ', nlons
        write(6,*) 'Failed in subroutine getgridinfo_nmm; Aborting!'
@@ -500,7 +505,7 @@ contains
     end if ! if (nlons .ne. nlonsin)
 
     if (nlats .ne. nlatsin) then
-       write(6,*) 'Error reading input file in gridinfo...' 
+       write(6,*) 'Error reading input file in gridinfo...'
        write(6,*) '      nlats ingested from file = ', nlatsin
        write(6,*) '      nlats specified in namelist = ', nlats
        write(6,*) 'Failed in subroutine getgridinfo_nmm; Aborting!'
@@ -510,7 +515,7 @@ contains
     end if ! if (nlats .ne. nlatsin)
 
     if (nlevs .ne. nlevsin) then
-       write(6,*) 'Error reading input file in gridinfo...' 
+       write(6,*) 'Error reading input file in gridinfo...'
        write(6,*) '      nlevs ingested from file = ', nlevsin
        write(6,*) '      nlevs specified in namelist = ', nlevs
        write(6,*) 'Failed in subroutine getgridinfo_nmm; Aborting!'
@@ -579,7 +584,7 @@ contains
              ! Convert from degrees to radians and update the global
              ! longitude array
              lonsgrd(count) = workgrid(i,j,1)
-             
+
              count = count + 1
           end do ! do i = 1, dimensions%xdim
        end do ! do j = 1, dimensions%ydim
@@ -590,7 +595,7 @@ contains
        ! Allocate memory for local variable grid
        if(.not. allocated(workgrid)) allocate(workgrid(dimensions%xdim,     &
             & dimensions%ydim,1))
-       
+
        ! Ingest variable from external file
        varstringname = 'GLAT'
        call readnetcdfdata(filename,workgrid,varstringname,                 &
@@ -668,10 +673,10 @@ contains
                      & wrfnmm_pdtop(1,1,1)) + wrfnmm_aeta2(1,1,k)*(         &
                      & spressmn(count)*100.0 - wrfnmm_pdtop(1,1,1) -        &
                      & wrfnmm_pt(1,1,1)) + wrfnmm_pt(1,1,1)
-             
+
                 ! Rescale pressure from Pa to hPa
                 presslmn(count,k) = presslmn(count,k)/100.0
-             
+
                 ! Compute the log of the pressure within the
                 ! respective layer
                 logp(count,k) = -log(presslmn(count,k))
@@ -688,7 +693,7 @@ contains
             & minval(spressmn),maxval(spressmn)
        write(6,*) 'Longitude range (min/max): ', minval(lonsgrd*rad2deg),   &
             & maxval(lonsgrd*rad2deg)
-       write(6,*) 'Latitude range (min/max): ', minval(latsgrd*rad2deg),    & 
+       write(6,*) 'Latitude range (min/max): ', minval(latsgrd*rad2deg),    &
             & maxval(latsgrd*rad2deg)
 
     !----------------------------------------------------------------------
@@ -750,12 +755,12 @@ contains
     ! Define array dimension variables
     integer,                                        intent(in)  :: sxdim, sydim, szdim
     integer,                                        intent(in)  :: xdim, ydim, zdim
-    
+
     ! Define variables passed to subroutine
     real,     dimension(sxdim,sydim,szdim), intent(in)  :: varin
 
     ! Define variables returned by subroutine
-    real,     dimension(xdim,ydim,zdim),    intent(out) :: varout    
+    real,     dimension(xdim,ydim,zdim),    intent(out) :: varout
 
     !======================================================================
 
@@ -797,14 +802,14 @@ contains
 
     integer,                                        intent(in)  :: sxdim, sydim, szdim
     integer,                                        intent(in)  :: xdim, ydim, zdim
-    
+
     ! Define variables passed to subroutine
-    
+
     real,     dimension(xdim,ydim,zdim), intent(in)  :: varin
 
     ! Define variables returned by subroutine
 
-    real,     dimension(sxdim,sydim,szdim),    intent(out) :: varout    
+    real,     dimension(sxdim,sydim,szdim),    intent(out) :: varout
 
     !======================================================================
 

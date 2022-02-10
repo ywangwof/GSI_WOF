@@ -1857,8 +1857,8 @@ contains
     real(r_single),allocatable::landmask(:),snow(:),seaice(:),t1st2d(:),pt2t(:)
     character(6) filename
     integer(i_kind) i,j,k,kt,kq,ku,kv,it,i_psfc,i_t,i_q,i_u,i_v,i_w,i_dbz
-    integer(i_kind) i_qc,i_qi,i_qr,i_qs,i_qg,i_qnr,i_qni,i_qnc
-    integer(i_kind) kqc,kqi,kqr,kqs,kqg,kqnr,kqni,kqnc,i_tt,ktt,kw,kdbz
+    integer(i_kind) i_qc,i_qi,i_qr,i_qs,i_qg,i_qh,i_qnr,i_qni,i_qnc
+    integer(i_kind) kqc,kqi,kqr,kqs,kqg,kqh,kqnr,kqni,kqnc,i_tt,ktt,kw,kdbz
     integer(i_kind) i_sst,i_skt,i_th2,i_q2,i_soilt1,i_tslb,i_smois,ktslb,ksmois
     integer(i_kind) :: iv, n_gocart_var,i_snowT_check
     integer(i_kind),allocatable :: i_chem(:), kchem(:)
@@ -1890,6 +1890,7 @@ contains
     real(r_kind), pointer :: ges_qr(:,:,:)=>NULL()
     real(r_kind), pointer :: ges_qs(:,:,:)=>NULL()
     real(r_kind), pointer :: ges_qg(:,:,:)=>NULL()
+    real(r_kind), pointer :: ges_qh(:,:,:)=>NULL()
     real(r_kind), pointer :: ges_qnr(:,:,:)=>NULL()
     real(r_kind), pointer :: ges_qni(:,:,:)=>NULL()
     real(r_kind), pointer :: ges_qnc(:,:,:)=>NULL()
@@ -1926,6 +1927,7 @@ contains
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qr', ges_qr, istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qs', ges_qs, istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qg', ges_qg, istatus );ier=ier+istatus
+       call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qh', ges_qh, istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qnr',ges_qnr,istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qni',ges_qni,istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qnc',ges_qnc,istatus );ier=ier+istatus
@@ -1938,8 +1940,8 @@ contains
   
     num_mass_fields_base=2+4*lm + 1
     num_mass_fields=num_mass_fields_base
-!    The 9 3D cloud analysis fields are: ql,qi,qr,qs,qg,qnr,qni,qnc,tt
-    if(l_hydrometeor_bkio .and. n_actual_clouds>0) num_mass_fields=num_mass_fields + 9*lm
+!    The 10 3D cloud analysis fields are: ql,qi,qr,qs,qg,qh,qnr,qni,qnc,tt
+    if(l_hydrometeor_bkio .and. n_actual_clouds>0) num_mass_fields=num_mass_fields + 10*lm
     if(l_gsd_soilTQ_nudge) num_mass_fields=num_mass_fields+2*nsig_soil+1
     if(i_use_2mt4b > 0 ) num_mass_fields=num_mass_fields+2
     if(i_use_2mt4b <= 0 .and. i_use_2mq4b > 0) num_mass_fields=num_mass_fields+1
@@ -2009,7 +2011,8 @@ contains
        i_qs=i_qr+lm
        i_qi=i_qs+lm
        i_qg=i_qi+lm
-       i_qnr=i_qg+lm
+       i_qh=i_qg+lm
+       i_qnr=i_qh+lm
        i_qni=i_qnr+lm
        i_qnc=i_qni+lm
        if(dbz_exist.and.if_model_dbz)then
@@ -2069,6 +2072,7 @@ contains
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qr', ges_qr, istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qs', ges_qs, istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qg', ges_qg, istatus );ier=ier+istatus
+       call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qh', ges_qh, istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qnr',ges_qnr,istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qni',ges_qni,istatus );ier=ier+istatus
        call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'qnc',ges_qnc,istatus );ier=ier+istatus
@@ -2108,6 +2112,7 @@ contains
        kqr=i_qr-1
        kqs=i_qs-1
        kqg=i_qg-1
+       kqh=i_qh-1
        kqnr=i_qnr-1
        kqni=i_qni-1
        kqnc=i_qnc-1
@@ -2167,6 +2172,7 @@ contains
           kqr=kqr+1
           kqs=kqs+1
           kqg=kqg+1
+          kqh=kqh+1
           kqnr=kqnr+1
           kqni=kqni+1
           kqnc=kqnc+1
@@ -2205,6 +2211,7 @@ contains
                 all_loc(j,i,kqr)=ges_qr(j,i,k)
                 all_loc(j,i,kqs)=ges_qs(j,i,k)
                 all_loc(j,i,kqg)=ges_qg(j,i,k)
+                all_loc(j,i,kqh)=ges_qh(j,i,k)
                 all_loc(j,i,kqnr)=ges_qnr(j,i,k)
                 all_loc(j,i,kqni)=ges_qni(j,i,k)
                 all_loc(j,i,kqnc)=ges_qnc(j,i,k)
@@ -2775,6 +2782,24 @@ contains
           kqg=kqg+1
           if(mype == 0) read(lendian_in)temp1
           call strip(all_loc(:,:,kqg),strp)
+          call mpi_gatherv(strp,ijn(mype+1),mpi_real4, &
+               tempa,ijn,displs_g,mpi_real4,0,mpi_comm_world,ierror)
+          if(mype == 0) then
+             call fill_mass_grid2t(temp1,im,jm,tempb,2)
+             do i=1,iglobal
+                tempa(i)=tempa(i)-tempb(i)
+             end do
+             call unfill_mass_grid2t(tempa,im,jm,temp1)
+             write(lendian_out)temp1
+          end if
+       end do
+  
+  ! Update qh     
+       kqh=i_qh-1
+       do k=1,nsig
+          kqh=kqh+1
+          if(mype == 0) read(lendian_in)temp1
+          call strip(all_loc(:,:,kqh),strp)
           call mpi_gatherv(strp,ijn(mype+1),mpi_real4, &
                tempa,ijn,displs_g,mpi_real4,0,mpi_comm_world,ierror)
           if(mype == 0) then

@@ -41,7 +41,7 @@ module gridinfo
 !
 !$$$
 
-use mpisetup, only: nproc, mpi_integer, mpi_real4 
+use mpisetup, only: nproc, mpi_integer, mpi_real4
 use mpimod, only: mpi_comm_world
 use params, only: datapath,nlevs,nlons,nlats,use_gfs_nemsio, fgfileprefixes, &
                   fv3fixpath, nx_res,ny_res, ntiles
@@ -68,8 +68,8 @@ integer(i_kind),                                  public     :: nlevs_pres
 integer,public :: npts
 integer,public :: ntrunc
 ! supported variable names in anavinfo
-character(len=max_varname_length),public, dimension(13) :: vars3d_supported = (/'u   ', 'v   ', 't   ', 'q   ', 'oz  ', 'ql  ', 'tsen', 'qr  ', &
-                                                                                'qs  ', 'qi  ', 'qg  ', 'dbz ', 'w   '  /)
+character(len=max_varname_length),public, dimension(14) :: vars3d_supported = (/'u   ', 'v   ', 't   ', 'q   ', 'oz  ', 'ql  ', 'tsen', 'qr  ', &
+                                                                                'qs  ', 'qi  ', 'qg  ','qh  ', 'dbz ', 'w   '  /)
 character(len=max_varname_length),public, dimension(3)  :: vars2d_supported = (/'ps ', 'pst', 'sst' /)
 ! supported variable names in anavinfo
 real(r_single), allocatable, dimension(:) :: ak,bk,eta1_ll,eta2_ll
@@ -84,7 +84,7 @@ implicit none
 character(len=120), intent(in) :: fileprefix
 logical, intent(in)            :: reducedgrid
 
-integer(i_kind) ierr,  k, nn 
+integer(i_kind) ierr,  k, nn
 character(len=500) filename
 integer(i_kind) i,j
 real(r_kind), allocatable, dimension(:) :: spressmn
@@ -101,8 +101,8 @@ character(len=4) char_nxres
 character(len=4) char_nyres
 character(len=1) char_tile
 character(len=24),parameter :: myname_ = 'fv3: getgridinfo'
-write (6,*)"The input fileprefix, reducedgrid are not used in the current implementation", &
-           fileprefix, reducedgrid
+!write (6,*)"The input fileprefix, reducedgrid are not used in the current implementation", &
+!           fileprefix, reducedgrid
 nlevsp1 = nlevs + 1
 nlevs_pres = nlevsp1
 npts = ntiles*nx_res*ny_res
@@ -130,13 +130,16 @@ if (nproc .eq. 0) then
 
 
 
+   if (allocated(ak))      deallocate(ak,bk)
+   if (allocated(eta1_ll)) deallocate(eta1_ll,eta2_ll)
+
    allocate(ak(nlevsp1),bk(nlevsp1))
    allocate(eta1_ll(nlevsp1),eta2_ll(nlevsp1))
    call read_fv3_restart_data1d('ak',filename,file_id,ak)
    call read_fv3_restart_data1d('bk',filename,file_id,bk)
 
-!!!!! change unit of ak,also reverse the 
-     
+!!!!! change unit of ak,also reverse the
+
     do i=1,nlevsp1
        eta1_ll(i)=ak(i)*0.01_r_kind
        eta2_ll(i)=bk(i)
@@ -172,13 +175,14 @@ if (nproc .eq. 0) then
    endif
 
 
-   
-   !  read lats/lons from C###_oro_data.tile#.nc 
+
+   !  read lats/lons from C###_oro_data.tile#.nc
    ! (this requires path to FV3 fix dir)
    write(char_nxres, '(i4)') nx_res
    write(char_nyres, '(i4)') ny_res
    allocate(lat_tile(nx_res,ny_res),lon_tile(nx_res,ny_res))
    nn = 0
+   if (allocated(latsgrd)) deallocate(latsgrd,lonsgrd)
    allocate(latsgrd(npts),lonsgrd(npts))
    do ntile=1,ntiles
       nn_tile0=(ntile-1)*nx_res*ny_res
@@ -203,6 +207,7 @@ if (nproc .eq. 0) then
    enddo  !loop for ntilet
    latsgrd = pi*latsgrd/180._r_single
    lonsgrd = pi*lonsgrd/180._r_single
+
    allocate(delp(nx_res,ny_res,nlevs),ps(nx_res,ny_res))
    allocate(g_prsi(nx_res,ny_res,nlevsp1))
    allocate(pressimn(npts,nlevsp1),presslmn(npts,nlevs))
@@ -239,7 +244,7 @@ if (nproc .eq. 0) then
    do k=1,nlevsp1
       nn=nn_tile0
       do j=1,ny_res
-      do i=1,nx_res  
+      do i=1,nx_res
         nn=nn+1
         pressimn(nn,k) = g_prsi(i,j,k)
       enddo
@@ -248,7 +253,7 @@ if (nproc .eq. 0) then
    do k=1,nlevs
       nn=nn_tile0
       do j=1,ny_res
-      do i=1,nx_res  
+      do i=1,nx_res
         nn=nn+1
         presslmn(nn,k) = (pressimn(nn,k)+pressimn(nn,k+1)) *half
       enddo
@@ -257,6 +262,7 @@ if (nproc .eq. 0) then
    print *,'ensemble mean first guess surface pressure:'
    print *,minval(spressmn),maxval(spressmn)
    ! logp holds log(pressure) or pseudo-height on grid, for each level/variable.
+   if (allocated(logp)) deallocate(logp)
    allocate(logp(npts,nlevs_pres)) ! log(ens mean first guess press) on mid-layers
    do k=1,nlevs
       ! all variables to be updated are on mid-layers, not layer interfaces.
@@ -270,9 +276,15 @@ if (nproc .eq. 0) then
    deallocate(lat_tile,lon_tile)
 endif ! root task
 
-   allocate(gridloc(3,npts))
+if (allocated(gridloc)) deallocate(gridloc)
+allocate(gridloc(3,npts))
+
 if (nproc .ne. 0) then
    ! allocate arrays on other (non-root) tasks
+   if (allocated(latsgrd)) deallocate(latsgrd,lonsgrd)
+   if (allocated(logp))    deallocate(logp)
+   if (allocated(eta1_ll)) deallocate(eta1_ll,eta2_ll)
+
    allocate(latsgrd(npts),lonsgrd(npts))
    allocate(logp(npts,nlevs_pres)) ! log(ens mean first guess press) on mid-layers
    allocate(eta1_ll(nlevsp1),eta2_ll(nlevsp1))
@@ -286,7 +298,7 @@ call mpi_bcast(latsgrd,npts,mpi_real4,0,MPI_COMM_WORLD,ierr)
 call mpi_bcast(eta1_ll,nlevsp1,mpi_real4,0,MPI_COMM_WORLD,ierr)
 call mpi_bcast(eta2_ll,nlevsp1,mpi_real4,0,MPI_COMM_WORLD,ierr)
 call mpi_bcast(ptop,1,mpi_real4,0,MPI_COMM_WORLD,ierr)
-  
+
 !==> precompute cartesian coords of analysis grid points.
 do nn=1,npts
    gridloc(1,nn) = cos(latsgrd(nn))*cos(lonsgrd(nn))

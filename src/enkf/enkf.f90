@@ -329,7 +329,8 @@ do niter=1,numiter
     endif
   else
     do nob=1,nobstot
-      oberrvaruse(nob) = oberrvar(nob)
+      !oberrvaruse(nob) = oberrvar(nob)
+      oberrvaruse(nob) = oberrvar_orig(nob)  !USE ORIGINAL OBS-ERR, NOT GSI ONE THAT'S BEEN PLAYED WITH: TAJ
     end do
   end if
 
@@ -453,6 +454,7 @@ do niter=1,numiter
              print *,'exiting obsloop after ',nobx,' obs processed' 
              exit obsloop
           else
+             if (nproc .eq. 0) print *, 'Skipping observation ', obtype(nob), paoverpb_save(nob)
              cycle obsloop ! skip to next ob
           endif
       else
@@ -530,6 +532,10 @@ do niter=1,numiter
       lnsiglinv=one/lnsigl(nob)
       obtimelinv=one/obtimel(nob)
       hpfhtcon=hpfhtoberrinv*r_nanalsm1
+
+! debug to check of localizations match obs type (TAJ)
+      !if (nproc == 0) print*, 'LOCAL CHECK:', obtype(nob), nob, corrlengthsq(nob), lnsigl(nob)
+
 
 !  Only need to recalculate nearest points when lat/lon is different
       if(nobx == 1 .or. &

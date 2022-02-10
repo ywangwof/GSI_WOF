@@ -3,7 +3,7 @@ module gridio
   !========================================================================
 
   !$$$ Module documentation block
-  ! 
+  !
   ! This module contains various routines to ingest and update
   ! variables from Weather Research and Forecasting (WRF) model Advanced
   ! Research WRF (ARW) and Non-hydrostatic Mesoscale Model (NMM) dynamical
@@ -14,16 +14,18 @@ module gridio
   ! prgmmr: Winterbottom        org: ESRL/PSD1       date: 2011-11-30
   !
   ! program history log:
-  !   
+  !
   !   2011-11-30 Winterbottom - Initial version.
   !   2016-02-09 shlyaeva - update to read state and control variables;
   !                         arw control now has Tv, specific humidity and
   !                         surface pressure instead of Tp, mix ratio and
-  !                         dry surf pressure. nmm control now has Tv 
+  !                         dry surf pressure. nmm control now has Tv
   !                         instead of Tsens.
   !   2017-05-12 Y. Wang and X. Wang - add more state variables for radar DA,
   !                                    (Johnson et al. 2015 MWR; Wang and Wang
   !                                    2017 MWR) POC: xuguang.wang@ou.edu
+  !
+  !  2018-12-05  Jones - Put hydrometeor variables back in. Also h_diabatic
   !
   ! attributes:
   !   language:  f95
@@ -95,10 +97,10 @@ contains
     real(r_single), dimension(npts,ndim,ntimes,nanal2-nanal1+1),  intent(out) :: vargrid
     real(r_double), dimension(npts,nlevs,ntimes,nanal2-nanal1+1), intent(out) :: qsat
 
-    ! Define local variables 
+    ! Define local variables
     character(len=500) :: filename
     character(len=500) :: filenamesfc
-    character(len=7)   :: charnanal
+    character(len=7)   :: charnanal,charnanal2
 
     logical :: ice
     real(r_single), dimension(:),   allocatable :: znu, znw  ! aeta1 and eta1
@@ -115,32 +117,65 @@ contains
 
     ! Define counting variables
     integer :: i, k, nb, ne, nanal
-    integer :: u_ind, v_ind, tv_ind, q_ind, oz_ind, ql_ind, qr_ind, qi_ind, qg_ind, &
-               qs_ind, qnc_ind, qnr_ind, qni_ind, dbz_ind, w_ind
-    integer :: tsen_ind, prse_ind
-    integer :: ps_ind, sst_ind
+    !integer :: u_ind, v_ind, tv_ind, q_ind, oz_ind, ql_ind, qr_ind, qi_ind, qg_ind, &
+    !           qs_ind, qnc_ind, qnr_ind, qni_ind, dbz_ind, w_ind
+    !integer :: tsen_ind, prse_ind
+    !integer :: ps_ind, sst_ind
+    integer :: u_ind, v_ind, w_ind, tv_ind, q_ind, oz_ind, hd_ind, t_ind
+    integer :: tsen_ind, prse_ind, ph_ind, mu_ind
+    integer :: ql_ind, qr_ind, qi_ind, qs_ind, qg_ind, qh_ind, dbz_ind
+    integer :: qnl_ind, qnr_ind, qni_ind, qns_ind, qng_ind, qnh_ind
+    integer :: qvg_ind, qvh_ind
+    integer :: ps_ind, sst_ind, t2_ind, q2_ind, u10_ind, v10_ind
 
     !======================================================================
     u_ind   = getindex(vars3d, 'u')   !< indices in the state var arrays
     v_ind   = getindex(vars3d, 'v')   ! U and V (3D)
+    w_ind   = getindex(vars3d, 'w')  ! W (3D)
     tv_ind  = getindex(vars3d, 'tv')  ! Tv (3D)
+    t_ind   = getindex(vars3d, 't')  ! Straight T (3D)
     q_ind   = getindex(vars3d, 'q')   ! Q (3D)
     oz_ind  = getindex(vars3d, 'oz')  ! Oz (3D)
     tsen_ind = getindex(vars3d, 'tsen') !sensible T (3D)
     prse_ind = getindex(vars3d, 'prse') ! pressure
-    ql_ind  = getindex(vars3d, 'ql')  ! QL (3D)
-    qr_ind  = getindex(vars3d, 'qr')  ! QR (3D)
-    qi_ind  = getindex(vars3d, 'qi')  ! QI (3D)
-    qg_ind  = getindex(vars3d, 'qg')  ! QG (3D)
-    qs_ind  = getindex(vars3d, 'qs')  ! QS (3D)
-    qnc_ind  = getindex(vars3d, 'qnc')  ! QNC (3D)
-    qnr_ind  = getindex(vars3d, 'qnr')  ! QNR (3D)
-    qni_ind  = getindex(vars3d, 'qni')  ! QNI (3D)
+    !ql_ind  = getindex(vars3d, 'ql')  ! QL (3D)
+    !qr_ind  = getindex(vars3d, 'qr')  ! QR (3D)
+    !qi_ind  = getindex(vars3d, 'qi')  ! QI (3D)
+    !qg_ind  = getindex(vars3d, 'qg')  ! QG (3D)
+    !qs_ind  = getindex(vars3d, 'qs')  ! QS (3D)
+    !qnc_ind  = getindex(vars3d, 'qnc')  ! QNC (3D)
+    !qnr_ind  = getindex(vars3d, 'qnr')  ! QNR (3D)
+    !qni_ind  = getindex(vars3d, 'qni')  ! QNI (3D)
+    ph_ind = getindex(vars3d, 'ph') ! pressure  height
+    mu_ind = getindex(vars3d, 'mu') ! perturbation dry air mass in column
+    hd_ind = getindex(vars3d, 'hd') ! Diabatic heating
+
+    ql_ind  = getindex(vars3d, 'ql')  ! Ql (Qc) (3D)
+    qr_ind  = getindex(vars3d, 'qr')  ! Qr (3D)
+    qi_ind  = getindex(vars3d, 'qi')  ! Qi (3D)
+    qs_ind  = getindex(vars3d, 'qs')  ! Qs (3D)
+    qg_ind  = getindex(vars3d, 'qg')  ! Qg (3D)
+    qh_ind  = getindex(vars3d, 'qh')  ! Qh (3D)
+
+    qnl_ind  = getindex(vars3d, 'qnl')  ! Qnl (c) (3D)
+    qnr_ind  = getindex(vars3d, 'qnr')  ! Qnr (3D)
+    qni_ind  = getindex(vars3d, 'qni')  ! Qni (3D)
+    qns_ind  = getindex(vars3d, 'qns')  ! Qns (3D)
+    qng_ind  = getindex(vars3d, 'qng')  ! Qng (3D)
+    qnh_ind  = getindex(vars3d, 'qnh')  ! Qnh (3D)
+    qvg_ind  = getindex(vars3d, 'qvg')  ! Qvg (3D)
+    qvh_ind  = getindex(vars3d, 'qvh')  ! Qvh (3D)
+
     dbz_ind  = getindex(vars3d, 'dbz')  ! DBZ (3D)
-    w_ind   = getindex(vars3d, 'w')  ! W (3D)
+    !w_ind   = getindex(vars3d, 'w')  ! W (3D)
 
     ps_ind  = getindex(vars2d, 'ps')  ! Ps (2D)
     sst_ind = getindex(vars2d, 'sst') ! SST (2D)
+    t2_ind = getindex(vars2d, 't2') ! 2 m Temp (2D)
+    q2_ind = getindex(vars2d, 'q2') ! 2 m QVapor (2D)
+    u10_ind = getindex(vars2d, 'u10') ! 10 m U-Wind (2D)
+    v10_ind = getindex(vars2d, 'v10') ! 10 m V-Wind (2D)
+
 
     ! Initialize all constants required by routine
     call init_constants(.true.)
@@ -157,11 +192,16 @@ contains
 
     ! Define character string for ensemble member file
     if (nanal > 0) then
-      write(charnanal,'(a3, i3.3)') 'mem', nanal
+      !write(charnanal,'(a3, i3.3)') 'mem', nanal
+      write(charnanal,'(i3.3)') nanal
+      if (nanal .lt. 10) write(charnanal2,'(i1.0)') nanal
+      if (nanal .ge. 10 .and. nanal .lt. 100) write(charnanal2,'(i2.0)') nanal
+      if (nanal .ge. 100) write(charnanal2,'(i3.0)') nanal
     else
       charnanal = 'ensmean'
+      charnanal2 = charnanal
     endif
-    filename = trim(adjustl(datapath))//trim(adjustl(fileprefixes(nb)))//trim(charnanal)
+    filename = trim(adjustl(datapath))//trim(adjustl(fileprefixes(nb)))//trim(charnanal2)
     filenamesfc = trim(adjustl(datapath))//trim(adjustl(filesfcprefixes(nb)))//trim(charnanal)
 
     !----------------------------------------------------------------------
@@ -187,6 +227,54 @@ contains
                  & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
        enddo
     endif
+    ! read w-component
+    if ( w_ind > 0 ) then
+       varstrname = 'W'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(w_ind-1)+1:levels(w_ind),nb,ne),nlevs)
+       do k = levels(w_ind-1)+1, levels(w_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: w ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+    endif
+
+    ! read t-component (only)
+    if ( t_ind > 0 ) then
+       varstrname = 'T'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(t_ind-1)+1:levels(t_ind),nb,ne),nlevs)
+       do k = levels(t_ind-1)+1, levels(t_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: t ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+    endif
+
+    ! read ph-component
+    if ( ph_ind > 0 ) then
+       varstrname = 'PH'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(ph_ind-1)+1:levels(ph_ind),nb,ne),nlevs)
+       do k = levels(ph_ind-1)+1, levels(ph_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: ph ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+    endif
+
+    ! read mu-component
+    if ( mu_ind > 0 ) then
+       varstrname = 'MU'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(mu_ind-1)+1:levels(mu_ind),nb,ne),nlevs)
+       do k = levels(mu_ind-1)+1, levels(mu_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: mu ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+    endif
+
     ! read qcloud
     if ( ql_ind > 0 ) then
        varstrname = 'QCLOUD'
@@ -242,19 +330,31 @@ contains
                  & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
        enddo
     endif
-    ! read qncloud
-    if ( qnc_ind > 0 ) then
-       varstrname = 'QNCLOUD'
+    ! read qhail
+    if ( qh_ind > 0 ) then
+       varstrname = 'QHAIL'
        call readwrfvar(filename, varstrname,                              &
-                       vargrid(:,levels(qnc_ind-1)+1:levels(qnc_ind),nb,ne),nlevs)
-       do k = levels(qnc_ind-1)+1, levels(qnc_ind)
+                       vargrid(:,levels(qh_ind-1)+1:levels(qh_ind),nb,ne),nlevs)
+       do k = levels(qh_ind-1)+1, levels(qh_ind)
           if (nproc .eq. 0)                                               &
-             write(6,*) 'READGRIDDATA_ARW: qnc ',                           &
+             write(6,*) 'READGRIDDATA_ARW: qh ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+    endif
+    ! read qncloud
+    if ( qnl_ind > 0 ) then
+!       varstrname = 'QNCLOUD'
+       varstrname = 'QNDROP'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(qnl_ind-1)+1:levels(qnl_ind),nb,ne),nlevs)
+       do k = levels(qnl_ind-1)+1, levels(qnl_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: qnl ',                           &
                  & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
        enddo
     endif
     ! read qnice
-    if ( qi_ind > 0 ) then
+    if ( qni_ind > 0 ) then
        varstrname = 'QNICE'
        call readwrfvar(filename, varstrname,                              &
                        vargrid(:,levels(qni_ind-1)+1:levels(qni_ind),nb,ne),nlevs)
@@ -275,6 +375,63 @@ contains
                  & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
        enddo
     endif
+    ! read qnsnow
+    if ( qns_ind > 0 ) then
+       varstrname = 'QNSNOW'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(qns_ind-1)+1:levels(qns_ind),nb,ne),nlevs)
+       do k = levels(qns_ind-1)+1, levels(qns_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: qns ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+   endif
+    ! read qngraup
+    if ( qng_ind > 0 ) then
+       varstrname = 'QNGRAUPEL'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(qng_ind-1)+1:levels(qng_ind),nb,ne),nlevs)
+       do k = levels(qng_ind-1)+1, levels(qng_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: qng ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+   endif
+    ! read qnhail
+    if ( qnh_ind > 0 ) then
+       varstrname = 'QNHAIL'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(qnh_ind-1)+1:levels(qnh_ind),nb,ne),nlevs)
+       do k = levels(qnh_ind-1)+1, levels(qnh_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: qnh ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+   endif
+
+    ! read qvgraup
+    if ( qvg_ind > 0 ) then
+       varstrname = 'QVGRAUPEL'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(qvg_ind-1)+1:levels(qvg_ind),nb,ne),nlevs)
+       do k = levels(qvg_ind-1)+1, levels(qvg_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: qvg ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+   endif
+    ! read qnhail
+    if ( qvh_ind > 0 ) then
+       varstrname = 'QVHAIL'
+       call readwrfvar(filename, varstrname,                              &
+                       vargrid(:,levels(qvh_ind-1)+1:levels(qvh_ind),nb,ne),nlevs)
+       do k = levels(qvh_ind-1)+1, levels(qvh_ind)
+          if (nproc .eq. 0)                                               &
+             write(6,*) 'READGRIDDATA_ARW: qvh ',                           &
+                 & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
+       enddo
+   endif
+
     ! read reflectivity
     if ( dbz_ind > 0 ) then
        varstrname = 'REFL_10CM'
@@ -287,16 +444,19 @@ contains
        enddo
     endif
     ! read w
-    if ( w_ind > 0 ) then
-       varstrname = 'W'
+    ! Diabatic Heating
+    if ( hd_ind > 0 ) then
+       varstrname = 'H_DIABATIC'
        call readwrfvar(filename, varstrname,                              &
-                       vargrid(:,levels(w_ind-1)+1:levels(w_ind),nb,ne),nlevs)
-       do k = levels(w_ind-1)+1, levels(w_ind)
+                       vargrid(:,levels(hd_ind-1)+1:levels(hd_ind),nb,ne),nlevs)
+       do k = levels(hd_ind-1)+1, levels(hd_ind)
           if (nproc .eq. 0)                                               &
-             write(6,*) 'READGRIDDATA_ARW: w ',                           &
+             write(6,*) 'READGRIDDATA_ARW: hd ',                           &
                  & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
        enddo
     endif
+
+
     ! set ozone to zero for now (like in GSI?)
     if (oz_ind > 0) then
        vargrid(:,levels(oz_ind-1)+1:levels(oz_ind),nb,ne) = zero
@@ -305,6 +465,8 @@ contains
     if (sst_ind > 0) then
        vargrid(:,levels(n3d)+sst_ind,nb,ne) = zero
     endif
+
+   !Other 2-D variables??
 
     ice = .false.
 
@@ -337,7 +499,7 @@ contains
           enkf_qintegral(i) = enkf_qintegral(i) +                          &
                               (znw(k) - znw(k+1))*enkf_mixratio(i,k)
        enddo
-    enddo 
+    enddo
 
     ! compute dry surface pressure
     enkf_psfc = r0_01 * (enkf_mu + enkf_mub + ptop)
@@ -347,7 +509,7 @@ contains
     ! compute specific humidity
     enkf_spechumd = enkf_mixratio / (one + enkf_mixratio)
 
-    ! compute pressure 
+    ! compute pressure
     do k = 1, nlevs
       enkf_pressure(:,k) = r0_01 * (znu(k) * (100 * enkf_psfc - ptop) + ptop)
     enddo
@@ -384,7 +546,7 @@ contains
                  & k, minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
        enddo
     endif
- 
+
     if (ps_ind > 0) then
        vargrid(:,levels(n3d)+ps_ind,nb,ne) = enkf_psfc
        k = levels(n3d) + ps_ind
@@ -411,9 +573,9 @@ contains
     else
        qsat(:,:,nb,ne) = 1._r_double
     endif
-          
+
     !======================================================================
-    ! Deallocate memory 
+    ! Deallocate memory
     if(allocated(enkf_mu))             deallocate(enkf_mu)
     if(allocated(enkf_mub))            deallocate(enkf_mub)
     if(allocated(enkf_temp))           deallocate(enkf_temp)
@@ -462,7 +624,7 @@ contains
     character(len=12)  :: varstrname
     character(len=500) :: filename
     character(len=500) :: filenamesfc
-    character(len=7)   :: charnanal
+    character(len=7)   :: charnanal, charnanal2
 
     ! Define counting variables
     integer(i_kind) :: nb, k, nanal, ne
@@ -485,7 +647,7 @@ contains
 
     ! Initialize all constants required by routine
     call init_constants(.true.)
-       
+
     !----------------------------------------------------------------------
     if (ntimes > 1) then
        write(6,*)'gridio/readgriddata: reading multiple backgrounds not yet supported'
@@ -500,16 +662,20 @@ contains
     ! Define character string for ensemble member file
     if (nanal > 0) then
       write(charnanal,'(a3, i3.3)') 'mem', nanal
+      write(charnanal,'(i3.3)') nanal
+      if (nanal .lt. 10) write(charnanal2,'(i1.0)') nanal
+      if (nanal .ge. 10 .and. nanal .lt. 100) write(charnanal2,'(i2.0)') nanal
+      if (nanal .ge. 100) write(charnanal2,'(i3.0)') nanal
     else
       charnanal = 'ensmean'
+      charnanal2 = charnanal
     endif
-    filename = trim(adjustl(datapath))//trim(adjustl(fileprefixes(nb)))//trim(charnanal)
-    filenamesfc = trim(adjustl(datapath))//trim(adjustl(filesfcprefixes(nb)))//trim(charnanal)
+    filename = trim(adjustl(datapath))//trim(adjustl(fileprefixes(nb)))//trim(charnanal2)
 
     !----------------------------------------------------------------------
     ! read u-component
     if (u_ind > 0) then
-       varstrname = 'U' 
+       varstrname = 'U'
        call readwrfvar(filename, varstrname,                               &
                        vargrid(:,levels(u_ind-1)+1:levels(u_ind),nb,ne), nlevs)
        do k = levels(u_ind-1)+1, levels(u_ind)
@@ -613,10 +779,10 @@ contains
               & minval(vargrid(:,k,nb,ne)), maxval(vargrid(:,k,nb,ne))
     endif
 
-    ! compute the pressure profile 
+    ! compute the pressure profile
     do k = 1, nlevs
        enkf_pressure(:,k) = r0_01 * (aeta1(k)*pdtop + aeta2(k)*enkf_pd + pt)
-    end do 
+    end do
 
     if (prse_ind > 0) then
        vargrid(:,levels(prse_ind-1)+1:levels(prse_ind)-1, nb,ne) = enkf_pressure
@@ -661,7 +827,7 @@ contains
   subroutine writegriddata(nanal1,nanal2,vars3d,vars2d,n3d,n2d,levels,ndim,vargrid,no_inflate_flag)
     use constants
     use params, only: nbackgrounds, anlfileprefixes, fgfileprefixes
-    include 'netcdf.inc'      
+    include 'netcdf.inc'
 
     !----------------------------------------------------------------------
     ! Define variables passed to subroutine
@@ -670,20 +836,26 @@ contains
     character(len=max_varname_length), dimension(n3d), intent(in) :: vars3d
     integer, dimension(0:n3d), intent(in) :: levels
     real(r_single), dimension(npts,ndim,nbackgrounds,nanal2-nanal1+1), intent(in) :: vargrid
-    logical, intent(in) :: no_inflate_flag 
+    logical, intent(in) :: no_inflate_flag
       !Not used here, but added to make writegriddata(...) consistent with gridio_gfs.f90
 
     !----------------------------------------------------------------------
     ! Define variables computed within subroutine
     character(len=500)  :: filename
-    character(len=3)    :: charnanal
+    character(len=3)    :: charnanal,charnanal2
     real                :: clip
-    integer :: iyear,imonth,iday,ihour,dh1,ierr,iw3jdn
+    integer :: iyear,imonth,iday,ihour,iminute,dh1,ierr,iw3jdn
 
     !----------------------------------------------------------------------
-    integer(i_kind) :: u_ind, v_ind, tv_ind, q_ind, ps_ind, ql_ind, qr_ind, qi_ind, qg_ind, &
-               qs_ind, qnc_ind, qnr_ind, qni_ind, dbz_ind
-    integer(i_kind) :: w_ind, cw_ind, ph_ind
+    !integer(i_kind) :: u_ind, v_ind, tv_ind, q_ind, ps_ind, ql_ind, qr_ind, qi_ind, qg_ind, &
+    !           qs_ind, qnc_ind, qnr_ind, qni_ind, dbz_ind
+    !integer(i_kind) :: w_ind, cw_ind, ph_ind
+    integer(i_kind) :: u_ind, v_ind, tv_ind, q_ind, tsen_ind, t_ind
+    integer(i_kind) :: w_ind, cw_ind, ph_ind, hd_ind, mu_ind
+    integer :: ql_ind, qr_ind, qi_ind, qs_ind, qg_ind, qh_ind, dbz_ind
+    integer :: qnl_ind, qnr_ind, qni_ind, qns_ind, qng_ind, qnh_ind
+    integer :: qvg_ind, qvh_ind
+    integer :: ps_ind, sst_ind, t2_ind, q2_ind, u10_ind, v10_ind
 
     !----------------------------------------------------------------------
     ! Define variables required by for extracting netcdf variable
@@ -710,22 +882,49 @@ contains
     u_ind   = getindex(vars3d, 'u')   !< indices in the state var arrays
     v_ind   = getindex(vars3d, 'v')   ! U and V (3D)
     tv_ind  = getindex(vars3d, 'tv')  ! Tv (3D)
+    t_ind   = getindex(vars3d, 't')  ! Straight T (3D)
+    tsen_ind  = getindex(vars3d, 'tsen')  ! Tsen (3D)
     q_ind   = getindex(vars3d, 'q')   ! Q (3D)
     cw_ind  = getindex(vars3d, 'cw')  ! CWM for WRF-NMM
     w_ind   = getindex(vars3d, 'w')   ! W for WRF-ARW
     ph_ind  = getindex(vars3d, 'ph')  ! PH for WRF-ARW
+    mu_ind  = getindex(vars3d, 'mu')  ! MU for WRF-ARW
+    hd_ind  = getindex(vars3d, 'hd') ! Diabatic heating
 
-    ql_ind  = getindex(vars3d, 'ql')  ! QL (3D) for WRF-ARW
-    qr_ind  = getindex(vars3d, 'qr')  ! QR (3D) for WRF-ARW
-    qi_ind  = getindex(vars3d, 'qi')  ! QI (3D) for WRF-ARW
-    qg_ind  = getindex(vars3d, 'qg')  ! QG (3D) for WRF-ARW
-    qs_ind  = getindex(vars3d, 'qs')  ! QS (3D) for WRF-ARW
-    qnc_ind  = getindex(vars3d, 'qnc')  ! QNC (3D) for WRF-ARW
-    qnr_ind  = getindex(vars3d, 'qnr')  ! QNR (3D) for WRF-ARW 
-    qni_ind  = getindex(vars3d, 'qni')  ! QNI (3D) for WRF-ARW
-    dbz_ind  = getindex(vars3d, 'dbz')  ! DBZ (3D) for WRF-ARW
+    !ql_ind  = getindex(vars3d, 'ql')  ! QL (3D) for WRF-ARW
+    !qr_ind  = getindex(vars3d, 'qr')  ! QR (3D) for WRF-ARW
+    !qi_ind  = getindex(vars3d, 'qi')  ! QI (3D) for WRF-ARW
+    !qg_ind  = getindex(vars3d, 'qg')  ! QG (3D) for WRF-ARW
+    !qs_ind  = getindex(vars3d, 'qs')  ! QS (3D) for WRF-ARW
+    !qnc_ind  = getindex(vars3d, 'qnc')  ! QNC (3D) for WRF-ARW
+    !qnr_ind  = getindex(vars3d, 'qnr')  ! QNR (3D) for WRF-ARW
+    !qni_ind  = getindex(vars3d, 'qni')  ! QNI (3D) for WRF-ARW
+    !dbz_ind  = getindex(vars3d, 'dbz')  ! DBZ (3D) for WRF-ARW
+    ql_ind  = getindex(vars3d, 'ql')  ! Ql (Qc) (3D)
+    qr_ind  = getindex(vars3d, 'qr')  ! Qr (3D)
+    qi_ind  = getindex(vars3d, 'qi')  ! Qi (3D)
+    qs_ind  = getindex(vars3d, 'qs')  ! Qs (3D)
+    qg_ind  = getindex(vars3d, 'qg')  ! Qg (3D)
+    qh_ind  = getindex(vars3d, 'qh')  ! Qh (3D)
+
+    qnl_ind  = getindex(vars3d, 'qnl')  ! Qnl (c) (3D)
+    qnr_ind  = getindex(vars3d, 'qnr')  ! Qnr (3D)
+    qni_ind  = getindex(vars3d, 'qni')  ! Qni (3D)
+    qns_ind  = getindex(vars3d, 'qns')  ! Qns (3D)
+    qng_ind  = getindex(vars3d, 'qng')  ! Qng (3D)
+    qnh_ind  = getindex(vars3d, 'qnh')  ! Qnh (3D)
+
+    qvg_ind  = getindex(vars3d, 'qvg')  ! Qvg (3D)
+    qvh_ind  = getindex(vars3d, 'qvh')  ! Qvh (3D)
+
+    dbz_ind  = getindex(vars3d, 'dbz')  ! DBZ (3D)
 
     ps_ind  = getindex(vars2d, 'ps')  ! Ps (2D)
+    sst_ind = getindex(vars2d, 'sst') ! SST (2D)
+    t2_ind = getindex(vars2d, 't2') ! 2 m Temp (2D)
+    q2_ind = getindex(vars2d, 'q2') ! 2 m QVapor (2D)
+    u10_ind = getindex(vars2d, 'u10') ! 10 m U-Wind (2D)
+    v10_ind = getindex(vars2d, 'v10') ! 10 m V-Wind (2D)
 
     ! Initialize constants required by routine
     call init_constants(.true.)
@@ -745,7 +944,11 @@ contains
     ! First guess file should be copied to analysis file at scripting
     ! level; only variables updated by EnKF are changed
     write(charnanal,'(i3.3)') nanal
-    filename = trim(adjustl(datapath))//trim(adjustl(anlfileprefixes(nb)))//"mem"//charnanal
+    if (nanal .lt. 10) write(charnanal2,'(i1.0)') nanal
+    if (nanal .ge. 10 .and. nanal .lt. 100) write(charnanal2,'(i2.0)') nanal
+    if (nanal .ge. 100) write(charnanal2,'(i3.0)') nanal
+    !filename = trim(adjustl(datapath))//trim(adjustl(anlfileprefixes(nb)))//"mem"//charnanal
+    filename = trim(adjustl(datapath))//trim(adjustl(anlfileprefixes(nb)))//charnanal2
 
     !----------------------------------------------------------------------
     ! Update u and v variables (same for NMM and ARW)
@@ -771,6 +974,44 @@ contains
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
+    ! update W for WRF-ARW
+    if (arw .and. w_ind > 0) then
+       varstrname = 'W'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(w_ind-1)+1:levels(w_ind),nb,ne)
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
+    ! update T and only T
+    if (arw .and. t_ind > 0) then
+       varstrname = 'T'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(t_ind-1)+1:levels(t_ind),nb,ne)
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
+    ! update PH for WRF-ARW
+    if (arw .and. ph_ind > 0) then
+       varstrname = 'PH'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(ph_ind-1)+1:levels(ph_ind),nb,ne)
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
+    ! update MU for WRF-ARW
+    if (arw .and. mu_ind > 0) then
+       varstrname = 'MU'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(mu_ind-1)+1:levels(mu_ind),nb,ne)
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
+    if (arw .and. hd_ind > 0) then
+       varstrname = 'H_DIABATIC'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(hd_ind-1)+1:levels(hd_ind),nb,ne)
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
     ! update reflectivity and hydrometeor mixing ratios for WRF-ARW
     if (arw .and. dbz_ind > 0) then
        varstrname = 'REFL_10CM'
@@ -783,6 +1024,10 @@ contains
        varstrname = 'QCLOUD'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
        enkf_field = enkf_field + vargrid(:,levels(ql_ind-1)+1:levels(ql_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
@@ -790,6 +1035,10 @@ contains
        varstrname = 'QRAIN'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
        enkf_field = enkf_field + vargrid(:,levels(qr_ind-1)+1:levels(qr_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
@@ -797,6 +1046,10 @@ contains
        varstrname = 'QICE'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
        enkf_field = enkf_field + vargrid(:,levels(qi_ind-1)+1:levels(qi_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
@@ -804,6 +1057,10 @@ contains
        varstrname = 'QSNOW'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
        enkf_field = enkf_field + vargrid(:,levels(qs_ind-1)+1:levels(qs_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
@@ -811,13 +1068,33 @@ contains
        varstrname = 'QGRAUP'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
        enkf_field = enkf_field + vargrid(:,levels(qg_ind-1)+1:levels(qg_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
-    if (arw .and. qnc_ind > 0) then
-       varstrname = 'QNCLOUD'
+    if (arw .and. qh_ind > 0) then
+       varstrname = 'QHAIL'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
-       enkf_field = enkf_field + vargrid(:,levels(qnc_ind-1)+1:levels(qnc_ind),nb,ne)
+       enkf_field = enkf_field + vargrid(:,levels(qh_ind-1)+1:levels(qh_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
+    if (arw .and. qnl_ind > 0) then
+       !varstrname = 'QNCLOUD'
+       varstrname = 'QNDROP'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(qnl_ind-1)+1:levels(qnl_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
@@ -825,6 +1102,10 @@ contains
        varstrname = 'QNICE'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
        enkf_field = enkf_field + vargrid(:,levels(qni_ind-1)+1:levels(qni_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
@@ -832,22 +1113,68 @@ contains
        varstrname = 'QNRAIN'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
        enkf_field = enkf_field + vargrid(:,levels(qnr_ind-1)+1:levels(qnr_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
 
-    ! update W and PH for WRF-ARW
-    if (arw .and. w_ind > 0) then
-       varstrname = 'W'
+    if (arw .and. qns_ind > 0) then
+       varstrname = 'QNSNOW'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
-       enkf_field = enkf_field + vargrid(:,levels(w_ind-1)+1:levels(w_ind),nb,ne)
+       enkf_field = enkf_field + vargrid(:,levels(qns_ind-1)+1:levels(qns_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
-    if (arw .and. ph_ind > 0) then
-       varstrname = 'PH'
+
+    if (arw .and. qng_ind > 0) then
+       varstrname = 'QNGRAUPEL'
        call readwrfvar(filename, varstrname, enkf_field, nlevs)
-       enkf_field = enkf_field + vargrid(:,levels(ph_ind-1)+1:levels(ph_ind),nb,ne)
+       enkf_field = enkf_field + vargrid(:,levels(qng_ind-1)+1:levels(qng_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
        call writewrfvar(filename, varstrname, enkf_field, nlevs)
     endif
+
+    if (arw .and. qnh_ind > 0) then
+       varstrname = 'QNHAIL'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(qnh_ind-1)+1:levels(qnh_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
+    if (arw .and. qvg_ind > 0) then
+       varstrname = 'QVGRAUPEL'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(qvg_ind-1)+1:levels(qvg_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
+    if (arw .and. qvh_ind > 0) then
+       varstrname = 'QVHAIL'
+       call readwrfvar(filename, varstrname, enkf_field, nlevs)
+       enkf_field = enkf_field + vargrid(:,levels(qvh_ind-1)+1:levels(qvh_ind),nb,ne)
+       if (cliptracers) then
+          clip = tiny(enkf_field(1,1))
+          where (enkf_field < clip) enkf_field = clip
+       endif
+       call writewrfvar(filename, varstrname, enkf_field, nlevs)
+    endif
+
     deallocate(enkf_field)
 
 
@@ -863,7 +1190,7 @@ contains
 
           ! compute background virtual temperature
           enkf_t = enkf_t * (one + fv*enkf_q)
-          
+
           ! add analysis increment to virtual temperature and specific humidity
           if (tv_ind > 0) then
              enkf_t = enkf_t + vargrid(:,levels(tv_ind-1)+1:levels(tv_ind),nb,ne)
@@ -876,7 +1203,7 @@ contains
           if (cliptracers) then
              clip = tiny(enkf_q(1,1))
              where (enkf_q < clip) enkf_q = clip
-          end if 
+          end if
 
           ! compute analysis sensible temperature
           enkf_t = enkf_t / (one + fv*enkf_q)
@@ -1001,6 +1328,7 @@ contains
     read(datestring(5:6),'(i2)') imonth
     read(datestring(7:8),'(i2)') iday
     read(datestring(9:10),'(i2)') ihour
+    read(datestring(11:12),'(i2)') iminute
     if (nmm .and. nmm_restart) then
        varstrname = 'NSTART_HOUR'
        if(.not. allocated(vargrid_native)) allocate(vargrid_native(1,1,1))
@@ -1008,10 +1336,10 @@ contains
        call writenetcdfdata(filename,vargrid_native,varstrname,1,1,1)
     end if
     !
-    !  update START_DATE, SIMULATION_START_DATE, GMT, JULYR, JULDAY 
+    !  update START_DATE, SIMULATION_START_DATE, GMT, JULYR, JULDAY
     !  global attributes.
     !
-    write(DateStr,'(i4,"-",i2.2,"-",i2.2,"-",i2.2,"_",i2.2,":",i2.2)') iyear,imonth,iday,ihour,0,0
+    write(DateStr,'(i4,"-",i2.2,"-",i2.2,"-",i2.2,"_",i2.2,":",i2.2)') iyear,imonth,iday,ihour,iminute,0
     ierr = NF_OPEN(trim(filename), NF_WRITE, dh1)
     IF (ierr .NE. NF_NOERR) print *, 'OPEN ',NF_STRERROR(ierr)
     ierr = NF_PUT_ATT_TEXT(dh1,NF_GLOBAL,'START_DATE',len(trim(DateStr)),DateStr)
@@ -1041,7 +1369,7 @@ contains
 
   !======================================================================
   ! readwrfvar.f90: This subroutine reads a varname variable from WRF
-  ! ARW or NMM netcdf file and returns the variable interpolated to 
+  ! ARW or NMM netcdf file and returns the variable interpolated to
   ! unstaggered grid, in EnKF style (1D array for 2D field); all
   ! checks for grid staggering are contained within this subroutine
   subroutine readwrfvar(filename, varname, grid, nlevs)
@@ -1202,7 +1530,7 @@ contains
     zdim_local = nlevs
     if(nlevs == 1) then
        zdim_native = 1
-    end if 
+    end if
 
     ! Define local variable dimensions
     xdim_local = xdim
@@ -1374,7 +1702,7 @@ contains
     real(r_single), dimension(npts,ndim,nbackgrounds,1), intent(inout) :: grdin
     logical, intent(in) :: no_inflate_flag
   end subroutine writeincrement_pnc
-  
+
   subroutine readgriddata_pnc(vars3d,vars2d,n3d,n2d,levels,ndim,ntimes, &
                                fileprefixes,filesfcprefixes,reducedgrid,grdin,qsat)
     use constants, only: max_varname_length

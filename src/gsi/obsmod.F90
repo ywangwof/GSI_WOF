@@ -1,3 +1,4 @@
+
 module obsmod
 !$$$ module documentation block
 !           .      .    .                                       .
@@ -14,8 +15,8 @@ module obsmod
 !   2004-07-23  derber   - add conventional sst observations
 !   2004-11-22  derber   - remove weight, add logical for boundary point
 !   2004-11-30  cucurull - add GPS RO data
-!   2004-12-22  treadon  - rename logical "idiag_conv" as "diag_conv", 
-!                          add write_diag logical, remove conv_diagsave 
+!   2004-12-22  treadon  - rename logical "idiag_conv" as "diag_conv",
+!                          add write_diag logical, remove conv_diagsave
 !                          from module
 !   2005-01-28  cucurull - clean up code handling gps local refractivity
 !   2005-03-01  parrish  - nonlinear qc change to account for inflated obs error
@@ -25,7 +26,7 @@ module obsmod
 !   2005-06-14  wu       - add OMI oz (ozo)
 !   2005-06-21  cucurull - add logical ref_obs (GPS), parameter grids_dim (GPS)
 !                        - add GPS bending angle observations
-!   2005-08-03  derber   - move var qc parameters b_ and pg_ for conventional 
+!   2005-08-03  derber   - move var qc parameters b_ and pg_ for conventional
 !                          from qcmod to obsmod
 !   2005-09-28  derber   - consolidate weights and locations for observations
 !   2005-11-22  wu       - add variables and flag for perturbed conventional
@@ -41,7 +42,7 @@ module obsmod
 !   2006-04-19  treadon  - add logical switch dtbduv_on
 !   2006-05-05  treadon  - add maximum time window variable
 !   2006-07-28  derber  - modify to use new inner loop obs data structure
-!   2006-09-20  cucurull - remove termt1in for GPS data, add gpstail%b_tkges 
+!   2006-09-20  cucurull - remove termt1in for GPS data, add gpstail%b_tkges
 !                          for GPS data, remove b_psges
 !   2006-10-25  sienkiewicz - add blacklst flag
 !   2007-01-10  sienkiewicz - define level ozone obs types
@@ -57,7 +58,7 @@ module obsmod
 !   2007-06-22  cucurull - modify gps_all_ob_type structure
 !   2007-06-26  tremolet - observation sensitivity
 !   2007-07-11  tremolet - increment sensitivity to obs
-!   2007-07-26  cucurull - modify pressure structure in gps_ob_type  
+!   2007-07-26  cucurull - modify pressure structure in gps_ob_type
 !   2007-10-24  todling  - add nchnperobs to obsdiag
 !   2007-11-12  todling  - add interface to destroyobs
 !   2008-03-24        wu - add variables and logical switch for adaptive oberror tuning
@@ -71,10 +72,10 @@ module obsmod
 !   2010-02-10  jing     - merge in obs key set (idv,iob,ich) in obs types for unique
 !                          run-time identification (in sorting and searching).
 !   2010-03-05  pondeca  - set ndat_times=1 for 2dvar mode
-!   2010-03-24  tangborn - added carbon monoxide (co) observation type type 
+!   2010-03-24  tangborn - added carbon monoxide (co) observation type type
 !   2010-04-01  li       - add zob, tz_tr to sst_ob_type
 !   2010-05-12  zhu      - add create_passive_obsmod_vars and destroyobs_passive
-!   2010-05-26  treadon  - add tcpptr to public list 
+!   2010-05-26  treadon  - add tcpptr to public list
 !   2010-06-14  huang    - add aerosol variable (*aero*)
 !   2010-07-10  todling  - turn aerosol heads/tails public
 !   2010-08-18       hu  - add codiags to public declaration
@@ -154,8 +155,8 @@ module obsmod
 !  01-27-2020 Winterbottom Moved regression coeffcients for regional
 !                          model (e.g., HWRF) aircraft recon dynamic
 !                          observation error (DOE) specification to
-!                          GSI namelist level.  
-! 
+!                          GSI namelist level.
+!
 ! Subroutines Included:
 !   sub init_obsmod_dflts   - initialize obs related variables to default values
 !   sub init_directories    - create sub-directories for tasks specific i/o
@@ -182,7 +183,7 @@ module obsmod
 !   def use_limit    - parameter set equal to -1 if diag files produced or 0 if not diag files or reduce_diag
 !   def obs_setup    - prefix for files passing pe relative obs data to setup routines
 !   def dsfcalc      - specifies method to determine surface fields within a FOV
-!                      when equal to one, integrate model fields over FOV. 
+!                      when equal to one, integrate model fields over FOV.
 !                      when not one, bilinearly interpolate model fields to FOV center.
 !   def dfile        - input observation file names
 !   def dsis         - sensor/instrument/satellite flag from info files
@@ -239,8 +240,8 @@ module obsmod
 !   def oztail       - sbuv ozone profile linked list tail
 !   def o3lhead      - ozone level data linked list head
 !   def o3ltail      - ozone level data linked list tail
-!   def colvkhead    - carbon monoxide level data linked list head 
-!   def colvktail    - carbon monoxide level data linked list tail 
+!   def colvkhead    - carbon monoxide level data linked list head
+!   def colvktail    - carbon monoxide level data linked list tail
 !   def aerohead     - aerosol profile linked list head
 !   def aerotail     - aerosol profile linked list tail
 !   def aerolhead    - aerosol level data linked list head
@@ -292,7 +293,7 @@ module obsmod
 !   def iout_q       - output unit for moisture stats
 !   def iout_uv      - output unit for wind stats
 !   def iout_oz      - output unit for ozone stats
-!   def iout_co      - output unit for co stats 
+!   def iout_co      - output unit for co stats
 !   def iout_aero    - output unit for aerosol stats
 !   def iout_ps      - output unit for surface pressure stats
 !   def iout_pw      - output unit for precipitable water stats
@@ -341,7 +342,7 @@ module obsmod
 !   def mype_uwnd10m - task to handle conventional 10-m uwnd stats
 !   def mype_vwnd10m - task to handle conventional 10-m vwnd stats
 !   def mype_td2m    - task to handle conventional 2-m dew point
-!   def mype_mxtm    - task to handle conventional daily maximum temperature 
+!   def mype_mxtm    - task to handle conventional daily maximum temperature
 !   def mype_mitm    - task to handle conventional daily minimum temperature
 !   def mype_pmsl    - task to handle conventional pressure at mean seal level
 !   def mype_howv    - task to handle conventional significant wave height stats
@@ -377,7 +378,7 @@ module obsmod
 !   def lwrite_predterms - logical to write out actual predictor terms in diagnostic files
 !                          .true. will write out actual predictor terms (for EnKF)
 !                          .false. will write out predicted bias (default)
-!   def lwrite_peakwt    - logical to write out approximate peak pressure of weighting 
+!   def lwrite_peakwt    - logical to write out approximate peak pressure of weighting
 !                          function to diag file
 !                          .true. - uses iextra,jextra to append information to diag file
 !                          .false. - write out standard diag file (default)
@@ -473,7 +474,20 @@ module obsmod
 
   public :: iout_dbz, mype_dbz
   ! --- DBZ DA ---
-  
+!CWP STUF (TAJ)
+  !public :: i_cwp_ob_type
+  public :: iout_cwp, mype_cwp
+
+! DEWPOINT (TAJ / JJH)
+  !public :: i_td_ob_type
+  public :: iout_td, mype_td
+  public :: LH_err
+
+! OTHER STUFF (TAJ / JJH)
+  !public :: decreasemesonetoberr,mesonettoberr,mesonetuvoberr,doublemomentflag
+  !public :: innerverifonly,innerdlon1,innerdlon2,innerdlat1,innerdlat2
+
+
   public :: obsmod_init_instr_table
   public :: obsmod_final_instr_table
   public :: nobs_sub
@@ -497,10 +511,10 @@ module obsmod
   ! 1/237: Dropsonde observations.
 
   ! 292: SFMR observations.
-  
+
   ! The following correspond to the specific humidity (q)
   ! observations:
-  
+
   public :: q_doe_a_136
   public :: q_doe_a_137
   public :: q_doe_b_136
@@ -514,14 +528,14 @@ module obsmod
   public :: t_doe_b_137
 
   ! The following correspond to the wind (uv) observations:
-  
+
   public :: uv_doe_a_236
   public :: uv_doe_a_237
   public :: uv_doe_a_292
   public :: uv_doe_b_236
   public :: uv_doe_b_237
   public :: uv_doe_b_292
-  
+
 
   interface obsmod_init_instr_table
           module procedure init_instr_table_
@@ -541,7 +555,10 @@ module obsmod
 #endif
 
   logical luse_obsdiag
-  logical binary_diag, netcdf_diag 
+  logical binary_diag, netcdf_diag
+  logical,parameter:: LH_err  = .true. ! this logical parameter controls which TD error to use, Lin and Hubbard (2004) moisture error model or NCEP error,i
+                                       ! .true using LH method and false using NCEP error, added by JJH 2017.11.30
+
 
 ! Declare types
 
@@ -559,15 +576,15 @@ module obsmod
   integer(i_kind) ndat,ndat_types,ndat_times,nprof_gps
   integer(i_kind) lunobs_obs,nloz_v6,nloz_v8,nobskeep,nloz_omi
   integer(i_kind) nlco,use_limit
-  integer(i_kind) iout_rad,iout_pcp,iout_t,iout_q,iout_uv, &
-                  iout_oz,iout_ps,iout_pw,iout_rw, iout_dbz
+  integer(i_kind) iout_rad,iout_pcp,iout_t,iout_q,iout_uv,iout_td,&
+                  iout_oz,iout_ps,iout_pw,iout_rw, iout_dbz, iout_cwp
   integer(i_kind) iout_dw,iout_gps,iout_sst,iout_tcp,iout_lag
   integer(i_kind) iout_co,iout_gust,iout_vis,iout_pblh,iout_tcamt,iout_lcbas
   integer(i_kind) iout_cldch
   integer(i_kind) iout_wspd10m,iout_td2m,iout_mxtm,iout_mitm,iout_pmsl,iout_howv
   integer(i_kind) iout_uwnd10m,iout_vwnd10m
-  integer(i_kind) mype_t,mype_q,mype_uv,mype_ps,mype_pw, &
-                  mype_rw,mype_dw,mype_gps,mype_sst, &
+  integer(i_kind) mype_t,mype_q,mype_uv,mype_ps,mype_pw, mype_td, &
+                  mype_rw,mype_dw,mype_gps,mype_sst, mype_cwp, &
                   mype_tcp,mype_lag,mype_co,mype_gust,mype_vis,mype_pblh, &
                   mype_wspd10m,mype_td2m,mype_mxtm,mype_mitm,mype_pmsl,mype_howv,&
                   mype_uwnd10m,mype_vwnd10m, mype_tcamt,mype_lcbas, mype_dbz
@@ -584,7 +601,7 @@ module obsmod
   integer(i_kind),allocatable,dimension(:)::  nsat1,mype_diaghdr
   integer(i_kind),allocatable :: nobs_sub(:,:)
   integer(i_kind),allocatable :: obs_sub_comm(:)
-  
+
   character(128) obs_setup
   character(128) dirname
   character(128) obs_input_common
@@ -618,7 +635,7 @@ module obsmod
   logical blacklst,lobsdiagsave,lobsdiag_allocated,lobskeep,lsaveobsens
   logical lobserver,l_do_adjoint, lobsdiag_forenkf
   logical,dimension(0:50):: write_diag
-  logical diag_radardbz 
+  logical diag_radardbz
   logical reduce_diag
   logical offtime_data
   logical hilbert_curve
@@ -654,21 +671,21 @@ module obsmod
 
   ! The following correspond to the specific humidity (q)
   ! observations:
-  
+
   real(r_kind) :: q_doe_a_136, q_doe_b_136
   real(r_kind) :: q_doe_a_137, q_doe_b_137
 
   ! The following correspond to the temperature (t) observations:
-  
+
   real(r_kind) :: t_doe_a_136, t_doe_b_136
   real(r_kind) :: t_doe_a_137, t_doe_b_137
 
   ! The following correspond to the wind (uv) observations:
-  
+
   real(r_kind) :: uv_doe_a_236, uv_doe_b_236
   real(r_kind) :: uv_doe_a_237, uv_doe_b_237
   real(r_kind) :: uv_doe_a_292, uv_doe_b_292
-  
+
 contains
 
   subroutine init_obsmod_dflts
@@ -684,7 +701,7 @@ contains
 !   2004-05-13  treadon, documentation
 !   2004-07-23  derber - add conventional sst observations
 !   2004-12-22  treadon - add initialization of write_diag
-!   2005-02-07  treadon - change mype_* for obs types 
+!   2005-02-07  treadon - change mype_* for obs types
 !   2005-02-18  treadon - change write_diag(1) default to .true.
 !   2005-05-27  yanqiu  - added obs_sen
 !   2005-05-27  derber  - add oberrflg
@@ -733,10 +750,10 @@ contains
     radar_no_thinning=.false.
     ens_hx_dbz_cut=.false.
     static_gsi_nopcp_dbz=0.0_r_kind
-    rmesh_dbz=2
-    rmesh_vr=2
-    zmesh_dbz=500.0_r_kind
-    zmesh_vr=500.0_r_kind
+    rmesh_dbz=2_r_kind   !default
+    rmesh_vr=2_r_kind   !default
+    zmesh_dbz=500.0_r_kind   !default
+    zmesh_vr=500.0_r_kind   !default
     minobrangedbz=10000.0_r_kind
     maxobrangedbz=200000.0_r_kind
     debugmode=.false.
@@ -752,7 +769,7 @@ contains
 !   Set logical flag
     perturb_obs = .false.   ! .true. = perturb observations
     oberror_tune = .false.   ! .true. = tune oberror
-    perturb_fact = one 
+    perturb_fact = one
     do i=0,50
        write_diag(i)=.false.
     end do
@@ -768,8 +785,8 @@ contains
     lsaveobsens=.false.
     l_do_adjoint=.true.     ! .true. = apply H^T when in int routines
     oberrflg  = .false.
-    bflag     = .false.     ! 
-    sfcmodel  = .false.     ! .false. = do not use boundary layer model 
+    bflag     = .false.     !
+    sfcmodel  = .false.     ! .false. = do not use boundary layer model
     dtbduv_on = .true.      ! .true. = use microwave dTb/duv in inner loop
     offtime_data = .false.  ! .false. = code fails if data files contain ref time
                             !            different from analysis time
@@ -780,6 +797,8 @@ contains
     blacklst  = .false.
     lobserver = .false.     ! when .t., calculate departure vectors only
     ext_sonde = .false.     ! .false. = do not use extended forward model for sonde
+
+    if_model_dbz=.true.
 
 !   Specify unit numbers to which to write data counts, indication of quality control
 !   decisions, and statistics summary of innovations.  For radiance data also write
@@ -820,6 +839,8 @@ contains
     iout_lwcp=236  ! liquid-water content path
     iout_light=237 ! lightning
     iout_dbz=238 ! radar reflectivity
+    iout_cwp=239   ! CWP
+    iout_td=240   ! Dewpoint
 
     mype_ps = npe-1          ! surface pressure
     mype_t  = max(0,npe-2)   ! temperature
@@ -854,9 +875,10 @@ contains
     mype_lwcp=max(0,npe-31)  ! liquid-water content path
     mype_light=max(0,npe-32)! GOES/GLM lightning
     mype_dbz=max(0,npe-33)   ! radar reflectivity
+    mype_cwp= max(0,npe-34)  ! CWP
+    mype_td= max(0,npe-35)  ! Dewpoint
 
-
-!   Initialize arrays used in namelist obs_input 
+!   Initialize arrays used in namelist obs_input
     time_window_max = three ! set maximum time window to +/-three hours
     time_window_rad = three ! set maximum time window to +/-three hours for radiance
 
@@ -868,7 +890,7 @@ contains
     nlco    = 10               ! number of "levels" in MOPITT version 4 CO data
 
     lunobs_obs = 2             ! unit to which to write/read information
-                               ! related to brightness temperature and 
+                               ! related to brightness temperature and
                                ! precipitation rate observations
 
     nprof_gps = 0
@@ -881,7 +903,7 @@ contains
     lread_obs_save   = .false.
     lread_obs_skip   = .false.
     lwrite_predterms = .false.
-    lwrite_peakwt    = .false.
+    lwrite_peakwt    = .true.
     lrun_subdirs     = .false.
     l_foreaft_thin   = .false.
     luse_obsdiag     = .false.
@@ -902,13 +924,13 @@ contains
     ! (henry.winterbottom@noaa.gov).
 
     ! Observation types:
-    
+
     ! 1/236: HDOB (e.g., flight-level) observations.
-    
+
     ! 1/237: Dropsonde observations.
-    
+
     ! 292: SFMR observations.
-    
+
     ! The following correspond to the specific humidity (q)
     ! observations:
 
@@ -922,27 +944,27 @@ contains
     t_doe_a_136 = 1.0_r_kind
     t_doe_b_136 = 0.0_r_kind
     t_doe_a_137 = 1.0_r_kind
-    t_doe_b_137 = 0.0_r_kind    
+    t_doe_b_137 = 0.0_r_kind
 
     ! The following correspond to the wind (uv) observations:
 
     uv_doe_a_236 = 1.0_r_kind
     uv_doe_b_236 = 0.0_r_kind
     uv_doe_a_237 = 1.0_r_kind
-    uv_doe_b_237 = 0.0_r_kind      
+    uv_doe_b_237 = 0.0_r_kind
     uv_doe_a_292 = 1.0_r_kind
     uv_doe_b_292 = 0.0_r_kind
-    
+
     return
   end subroutine init_obsmod_dflts
-  
+
   subroutine init_directories(mype)
 !$$$  subprogram documentation block
 !                .      .    .                                       .
 ! subprogram:    create sub-directories
 !     prgmmr:    kleist      org: np23                date: 2007-06-08
 !
-! abstract:  set-up name for and create sub-directories to 
+! abstract:  set-up name for and create sub-directories to
 !            hold observation and diagnostic files.   Doing
 !            so on IBM SP reduces wall clock and stabilizes
 !            run times
@@ -981,7 +1003,7 @@ contains
 
     return
   end subroutine init_directories
-  
+
   subroutine create_obsmod_vars
 !$$$  subprogram documentation block
 !                .      .    .                                       .
@@ -1157,11 +1179,11 @@ contains
 
     implicit none
 
-    if (allocated(nobs_sub)) deallocate(nobs_sub) 
+    if (allocated(nobs_sub)) deallocate(nobs_sub)
 
     return
   end subroutine destroyobs_
-  
+
 ! ----------------------------------------------------------------------
 
   subroutine destroy_obsmod_vars
@@ -1280,7 +1302,7 @@ if(obs_instr_initialized_) return
 inquire(file=trim(mrms_listfile), exist=l_mrms_run)
 
 iamroot_=mype==0
-if(present(iamroot)) iamroot_=iamroot 
+if(present(iamroot)) iamroot_=iamroot
 
 ! load file
 if (present(rcname)) then
@@ -1332,15 +1354,17 @@ allocate(ditype(nall),ipoint(nall))
 
 ! Retrieve each token of interest from table and define
 ! variables participating in state vector
-dval_use = .false. 
+dval_use = .false.
 do ii=1,nrows0
      read(utable(ii),*) dfile(ii),& ! local file name from which to read observatinal data
                         dtype(ii),& ! character string identifying type of observatio
                         dplat(ii),& ! currently contains satellite id (no meaning for non-sat data)
                         dsis(ii), & ! sensor/instrument/satellite identifier for info files
-                        dval(ii), & ! 
+                        dval(ii), & !
                         dthin(ii),& ! thinning flag (1=thinning on; otherwise off)
-                        dsfcalc(ii) ! use orig bilinear FOV surface calculation (routine deter_sfc)
+                      dsfcalc(ii) ,& ! use orig bilinear FOV surface calculation (routine deter_sfc)
+                      time_window(ii) ! time step for each observation  SWAPAN MALLICK (strange this is not the default way)
+
 
    ! The following is to sort out some historical naming conventions
    select case (dsis(ii)(1:4))
@@ -1356,9 +1380,12 @@ do ii=1,nrows0
    if(dval(ii) > 0.0) dval_use = .true.
    ditype(ii)= ' '                    ! character string identifying group type of ob (see read_obs)
    ipoint(ii)= 0                      ! default pointer (values set in gsisub) _RT: This is never needed
-   time_window(ii) = time_window_max  ! default to maximum time window
+   if (mype==0) then
+     print*, 'OBS_MOD: ', dtype(ii), time_window(ii), time_window_max
+   endif
+   !time_window(ii) = time_window_max  ! default to maximum time window NOPE: TAJ
    write(obsfile_all(ii),'(a,i4.4)') 'obs_input.', ii      ! name of scratch file to hold obs data
-   
+
 enddo
 
 deallocate(utable)

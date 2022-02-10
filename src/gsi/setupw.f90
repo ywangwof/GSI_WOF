@@ -552,6 +552,7 @@ subroutine setupw(obsLL,odiagLL,lunin,mype,bwork,awork,nele,nobs,is,conv_diagsav
      z_height = .false.
      if ((itype>=221 .and. itype <= 229) .and. (data(ihgt,i)<r0_1_bmiss)) z_height = .true.
      if ((itype==261) .and. (data(ihgt,i)<r0_1_bmiss)) z_height = .true.
+     if (itype==299) z_height = .true.   ! OK Mesonet TAJ
 
 
 !    Process observations reported with height differently than those

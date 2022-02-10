@@ -30,6 +30,8 @@ module params
 !                          modulated ensembles), nobsl_max (for ob selection
 !                          in LETKF and dfs_sort
 !                          (for using DFS in LETKF ob selection).
+!   2018-05-01  Change default files names to wrfinput (TAJ)
+!   2018-09-14  Add in local partical filter code (JP, TAJ)  
 !
 ! attributes:
 !   language: f95
@@ -77,7 +79,7 @@ character(len=120),dimension(7),public :: statesfcfileprefixes
 character(len=120),dimension(7),public :: anlfileprefixes
 character(len=120),dimension(7),public :: incfileprefixes
 ! analysis date string (YYYYMMDDHH)
-character(len=10), public ::  datestring
+character(len=12), public ::  datestring
 ! filesystem path to input files (first-guess, GSI diagnostic files).
 character(len=500),public :: datapath
 ! if deterministic=.true., the deterministic square-root filter

@@ -70,6 +70,8 @@ module m_obsNodeTypeManager
 
   use m_lightNode, only: lightNode
   use m_dbzNode  , only:   dbzNode
+  use m_cwpNode ,  only:   cwpNode !
+  use m_tdNode,    only:    tdNode !
 
   use kinds, only: i_kind
   use m_obsNode, only: obsNode
@@ -124,6 +126,8 @@ module m_obsNodeTypeManager
 
   public:: iobsNode_light
   public:: iobsNode_dbz
+  public:: iobsNode_cwp
+  public:: iobsNode_td
 
   public :: obsNode_typeMold
   public :: obsNode_typeIndex
@@ -179,6 +183,8 @@ module m_obsNodeTypeManager
   type(   lwcpNode), target, save::    lwcp_mold
   type(  lightNode), target, save::   light_mold
   type(  dbzNode),   target, save::     dbz_mold
+  type(  cwpNode),   target, save::     cwp_mold !
+  type(  tdNode),   target, save::     td_mold !
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   character(len=*),parameter :: myname='m_obsNodeTypeManager'
 
@@ -245,10 +251,12 @@ module m_obsNodeTypeManager
     enumerator:: iobsNode_lwcp
     enumerator:: iobsNode_light
     enumerator:: iobsNode_dbz
+    enumerator:: iobsNode_cwp
+    enumerator:: iobsNode_td
 
     enumerator:: iobsNode_extra_
   end enum
-  
+
   integer(i_kind),parameter:: iobsNode_kind = kind(iobsNode_zero_)
 
   integer(iobsNode_kind),parameter:: obsNodeType_undef  = -1_iobsNode_kind
@@ -314,6 +322,8 @@ function vname2index_(vname) result(index_)
 
   case("light","[lightnode]"); index_ = iobsNode_light
   case("dbz"  ,  "[dbznode]"); index_ = iobsNode_dbz
+  case("cwp", "[cwpnode]");    index_ = iobsNode_cwp
+  case("td", "[tdnode]");      index_ = iobsNode_td
 
   end select
 end function vname2index_
@@ -377,6 +387,8 @@ function vmold2index_select_(mold) result(index_)
 
   type is(lightNode); index_ = iobsNode_light
   type is(  dbzNode); index_ = iobsNode_dbz
+  type is( cwpNode);  index_ = iobsNode_cwp
+  type is( tdNode);   index_ = iobsNode_td
 
   end select
 end function vmold2index_select_
@@ -434,6 +446,8 @@ function index2vmold_(i_obType) result(obsmold_)
 
   case(iobsNode_light); obsmold_ =>   light_mold
   case(iobsNode_dbz);   obsmold_ =>     dbz_mold
+  case(iobsNode_cwp );  obsmold_ =>    cwp_mold
+  case(iobsNode_td );   obsmold_ =>    td_mold
 
   end select
 end function index2vmold_
