@@ -10,14 +10,14 @@ module enkf
 ! abstract: Updates the model state using the serial EnKF.  If the namelist
 !  parameter deterministic is .true., the serial ensemble square root
 !  filter described by Whitaker and Hamill (2002, MWR, p. 1913-1924) is used.
-!  If deterministic is .false., the serial EnKF with perturbed obs 
+!  If deterministic is .false., the serial EnKF with perturbed obs
 !  is used. If deterministic=.false, and sortinc=.true., the updated
 !  observation variable ensemble members are paired with the prior members
-!  so as to reduce the value of the update increments, following 
+!  so as to reduce the value of the update increments, following
 !  Anderson (2003, MWR, p. 634-642).  By "serial", we mean that observations
 !  are processed individually, one at a time.  The order that observations
 !  are assimilated can be controlled by the namelist parameter iassim_order.
-!  iassim_order=0 means assimilate obs in the order they were read in, 
+!  iassim_order=0 means assimilate obs in the order they were read in,
 !  iassim_order=1 means shuffle the obs randomly before assimilating,
 !  and iassim_order=2 means assimilate in order of predicted obervation variance
 !  reduction. Note that the predicted variance reduction is based on the
@@ -45,7 +45,7 @@ module enkf
 !  obfit_post and obsprd_post contain the observation increments and observation
 !  variable variance.
 !
-!  Covariance localization is used in the state update to limit the impact 
+!  Covariance localization is used in the state update to limit the impact
 !  of observations to a specified distance from the observation in the
 !  horizontal and vertical.  These distances can be set separately in the
 !  NH, tropics and SH, and in the horizontal, vertical and time dimensions,
@@ -62,26 +62,26 @@ module enkf
 !  background state (this computation, along with the rest of the forward
 !  operator calcuation, is performed by a separate program using the GSI
 !  forward operator code).  Since all the observation variable ensemble
-!  members often cannot fit in memory, they are saved in a temp file by 
+!  members often cannot fit in memory, they are saved in a temp file by
 !  module readobs, and only those needed on this task are read in by
 !  subroutine enkf_update.
 !
 !  If the namelist paramater modelspac_vloc is set to .true., the parameter
 !  neigv will be greater than zero, and model space vertical localization
 !  via modulated ensembles will be used.  In this case, the vertical
-!  location of an observation is not used (this generally improves the 
+!  location of an observation is not used (this generally improves the
 !  assimilation of radiance observations but increases the cost).
 
 !
 !  Adaptive observation thinning can be done via the parameter paoverpb_thresh.
-!  If this parameter >= 1 (1 is the default) no thinning is done.  If < 1, an 
+!  If this parameter >= 1 (1 is the default) no thinning is done.  If < 1, an
 !  observation is not assimilated unless it will reduce the observation
 !  variable ensemble variance by paoverpb_thresh (e.g. if paoverpb_thresh = 0.99,
 !  only obs that will reduce the variance by 1% will be assimilated).
 !
 ! Public Subroutines:
 !  enkf_update: performs the EnKF update (calls update_biascorr to perform
-!   the bias coefficient update.  The EnKF/bias coefficient update is 
+!   the bias coefficient update.  The EnKF/bias coefficient update is
 !   iterated numiter times (parameter numiter from module params).
 !
 ! Public Variables: None
@@ -93,7 +93,7 @@ module enkf
 !   2009-02-23:  Initial version.
 !   2016-02-01:  Ensure posterior perturbation mean remains zero.
 !   2016-05-02:  shlyaeva: Modification for reading state vector from table
-!   2016-11-29:  shlyaeva: Modification for using control vector (control and state 
+!   2016-11-29:  shlyaeva: Modification for using control vector (control and state
 !                used to be the same) and the "chunks" come from loadbal
 !   2018-05-31:  whitaker:  add modulated ensemble model-space vertical
 !                localization (neigv>0) and denkf option.
@@ -179,7 +179,7 @@ real(r_single), allocatable, dimension(:) :: paoverpb_save
 real(r_single), allocatable, dimension(:) :: paoverpb_min, paoverpb_min1, paoverpb_chunk
 integer(i_kind) ierr
 ! kd-tree search results
-type(kdtree2_result),dimension(:),allocatable :: sresults1,sresults2 
+type(kdtree2_result),dimension(:),allocatable :: sresults1,sresults2
 integer(i_kind) nanal,nn,nnn,nobm,nsame,nn1,nn2,oz_ind,nlev,dbz_ind,q_ind
 real(r_single),dimension(nlevs_pres):: taperv
 logical lastiter, kdgrid, kdobs
@@ -284,7 +284,7 @@ do niter=1,numiter
      nob2 = indxproc_obs(nproc+1,nob1)
      ensmean_obchunk(nob1) = ensmean_ob(nob2)
   enddo
-! reset ob error to account for gross errors 
+! reset ob error to account for gross errors
   if (niter > 1 .and. varqc) then
     if (huber) then ! "huber norm" QC
       do nob=1,nobstot
@@ -303,7 +303,7 @@ do niter=1,numiter
         ! pnge is the prob that the ob *does not* contain a gross error.
         ! assume rejected if prob of gross err > 50%.
         probgrosserr(nob) = one-pnge
-        if (probgrosserr(nob) > 0.5_r_single) then 
+        if (probgrosserr(nob) > 0.5_r_single) then
            nrej=nrej+1
         endif
       end do
@@ -311,7 +311,7 @@ do niter=1,numiter
       do nob=1,nobstot
         ! original form, gross error cutoff a multiple of ob error st dev.
         ! here gross err cutoff proportional to ensemble spread plus ob error
-        ! Dharssi, Lorenc and Inglesby eqn (1) a = grosserrw*sqrt(S+R) 
+        ! Dharssi, Lorenc and Inglesby eqn (1) a = grosserrw*sqrt(S+R)
         width = sprd_tol*sqrt(obsprd_prior(nob)+oberrvar(nob))
         pnge = prpgerr(nob)*sqrt(2.*pi*oberrvar(nob))/((one-prpgerr(nob))*(2.*width))
         normdepart = obfit_post(nob)/sqrt(oberrvar(nob))
@@ -322,7 +322,7 @@ do niter=1,numiter
         ! pnge is the prob that the ob *does not* contain a gross error.
         ! assume rejected if prob of gross err > 50%.
         probgrosserr(nob) = one-pnge
-        if (probgrosserr(nob) > 0.5_r_single) then 
+        if (probgrosserr(nob) > 0.5_r_single) then
            nrej=nrej+1
         endif
       end do
@@ -361,7 +361,7 @@ do niter=1,numiter
                                mpi_2real,mpi_minloc,mpi_comm_world,ierr)
             if (paoverpb_min(1) >= paoverpb_thresh) then
                 if (nproc .eq. 0) &
-                print *,'exiting obsloop after ',nobx,' obs processed' 
+                print *,'exiting obsloop after ',nobx,' obs processed'
                 nob1 = count(indxassim2 /= 0)
                 if (nobx-1+nob1 /= nobstot) then
                     if (nproc .eq. 0) then
@@ -396,7 +396,7 @@ do niter=1,numiter
                    endif
                 endif
                 exit obsloop
-            endif 
+            endif
             nob = paoverpb_min(2); indxassim(nobx) = nob
             if (indxassim2(nob) == 0) then
                if (nproc .eq. 0) then
@@ -415,11 +415,11 @@ do niter=1,numiter
       endif
 
       npob = iprocob(nob) ! what task is this ob on?
-  
+
       ! get ob priors, ob increment from that processor,
       ! send to other processors.
       if (nproc == npob) then
-          nob1 = indxob_chunk(nob); 
+          nob1 = indxob_chunk(nob);
           if (neigv > 0) then
               hpfht = sum(anal_obchunk_modens(:,nob1)**2)*r_nanalsm1
               anal_obtmp_modens(:) = anal_obchunk_modens(:,nob1)
@@ -431,7 +431,7 @@ do niter=1,numiter
           buffer(nanals+2) = hpfht
       end if
       call mpi_bcast(buffer,nanals+2,mpi_real4,npob,mpi_comm_world,ierr)
-      if (neigv > 0) then 
+      if (neigv > 0) then
          call mpi_bcast(anal_obtmp_modens,nanals*neigv,mpi_real4,npob,mpi_comm_world,ierr)
       endif
 
@@ -451,7 +451,7 @@ do niter=1,numiter
           iskip(nob) = 1
           if (iassim_order == 2) then
              if (nproc .eq. 0) &
-             print *,'exiting obsloop after ',nobx,' obs processed' 
+             print *,'exiting obsloop after ',nobx,' obs processed'
              exit obsloop
           else
              if (nproc .eq. 0) print *, 'Skipping observation ', obtype(nob), paoverpb_save(nob)
@@ -509,7 +509,7 @@ do niter=1,numiter
               end do
               ! re-order ob perturbations to minimize increments.
               ens_tmp = hxinc_modens/kfgain + hxprior_modens
-           endif 
+           endif
          end if
          obganl = obens - anal_obtmp
          if (neigv > 0) obganl_modens = ens_tmp - anal_obtmp_modens
@@ -534,7 +534,7 @@ do niter=1,numiter
       hpfhtcon=hpfhtoberrinv*r_nanalsm1
 
 ! debug to check of localizations match obs type (TAJ)
-      !if (nproc == 0) print*, 'LOCAL CHECK:', obtype(nob), nob, corrlengthsq(nob), lnsigl(nob)
+      if (nproc == 0) print*, 'LOCAL CHECK:', obtype(nob), nob, corrlengthsq(nob), lnsigl(nob)
 
 
 !  Only need to recalculate nearest points when lat/lon is different
@@ -546,7 +546,7 @@ do niter=1,numiter
        ! determine localization length scales based on latitude of ob.
        nf2=0
        if (lastiter .and. .not. lupd_obspace_serial) then
-        ! search analysis grid points for those within corrlength of 
+        ! search analysis grid points for those within corrlength of
         ! ob being assimilated (using a kd-tree for speed).
         if (kdgrid) then
            call kdtree2_r_nearest(tp=kdtree_grid,qv=obloc(:,nob),r2=corrsqr,&
@@ -559,7 +559,7 @@ do niter=1,numiter
                   nf2 = nf2 + 1
                   sresults1(nf2)%idx = npt
                   sresults1(nf2)%dis = r
-              end if     
+              end if
            end do
         end if
        end if
@@ -582,7 +582,7 @@ do niter=1,numiter
                 nf = nf + 1
                 sresults2(nf)%idx = nob1
                 sresults2(nf)%dis = r
-            end if     
+            end if
          end do
        end if
        do nob1=1,nf
@@ -599,7 +599,7 @@ do niter=1,numiter
         nsame=nsame+1
       end if
 
-  
+
       t4 = t4 + mpi_wtime() - t1
       t1 = mpi_wtime()
 
@@ -623,7 +623,7 @@ do niter=1,numiter
              i = sresults1(ii)%idx
              if (neigv > 0) then ! modulated ensemble, no explicit vertical localizatoin
                  if (taper1 > taper_thresh) then
-                    do nn=nn1,nn2 
+                    do nn=nn1,nn2
                        nlev = index_pres(nn) ! vertical index for nn'th control variable
                        if (nlev .eq. nlevs+1) nlev=1 ! 2d fields, assume surface
                        call expand_ens(neigv,nanals, &
@@ -672,7 +672,7 @@ do niter=1,numiter
                     end if
                  end do
              endif
-          end do ! end loop over background time levels. 
+          end do ! end loop over background time levels.
           end do ! end loop over nearby horiz grid points
 !$omp end parallel do
       end if ! if .not. lastiter or no close grid points
@@ -851,29 +851,29 @@ if (nproc == 0) print *,'time to broadcast obsprd_post = ',mpi_wtime()-t1
 predx = predx + deltapredx ! add increment to bias coeffs.
 deltapredx = 0.0
 
-! Gathering analysis perturbations 
+! Gathering analysis perturbations
 ! in observation space for EFSO
-if(fso_cycling) then  
-   if(nproc /= 0) then   
-      call mpi_send(anal_obchunk,numobsperproc(nproc+1)*nanals,mpi_real,0, &   
-                    1,mpi_comm_world,ierr)   
-   else   
-      allocate(anal_ob(1:nanals,nobstot))   
-      allocate(buffertmp3(nanals,nobs_max))   
-      do np=1,numproc-1   
-         call mpi_recv(buffertmp3,numobsperproc(np+1)*nanals,mpi_real,np, &   
-                       1,mpi_comm_world,mpi_status,ierr)   
-         do nob1=1,numobsperproc(np+1)   
-            nob2 = indxproc_obs(np+1,nob1)   
-            anal_ob(:,nob2) = buffertmp3(:,nob1)   
-         end do   
-      end do   
-      do nob1=1,numobsperproc(1)   
-         nob2 = indxproc_obs(1,nob1)   
-         anal_ob(:,nob2) = anal_obchunk(:,nob1)   
-      end do   
-      deallocate(buffertmp3)   
-   end if   
+if(fso_cycling) then
+   if(nproc /= 0) then
+      call mpi_send(anal_obchunk,numobsperproc(nproc+1)*nanals,mpi_real,0, &
+                    1,mpi_comm_world,ierr)
+   else
+      allocate(anal_ob(1:nanals,nobstot))
+      allocate(buffertmp3(nanals,nobs_max))
+      do np=1,numproc-1
+         call mpi_recv(buffertmp3,numobsperproc(np+1)*nanals,mpi_real,np, &
+                       1,mpi_comm_world,mpi_status,ierr)
+         do nob1=1,numobsperproc(np+1)
+            nob2 = indxproc_obs(np+1,nob1)
+            anal_ob(:,nob2) = buffertmp3(:,nob1)
+         end do
+      end do
+      do nob1=1,numobsperproc(1)
+         nob2 = indxproc_obs(1,nob1)
+         anal_ob(:,nob2) = anal_obchunk(:,nob1)
+      end do
+      deallocate(buffertmp3)
+   end if
 end if
 
 ! free local temporary arrays.

@@ -719,7 +719,8 @@ subroutine read_fv3_netcdf_guess(fv3filenamegin)
       call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'dbz'  ,ges_dbz ,istatus );ier=ier+istatus
     end if
     call GSI_BundleGetPointer ( GSI_MetGuess_Bundle(it), 'oz'  ,ges_oz ,istatus );ier=ier+istatus
-    if (ier/=0) call die(trim(myname),'cannot get pointers for fv3 met-fields, ier =',ier)
+    !if (ier/=0) call die(trim(myname),'cannot get pointers for fv3 met-fields, ier =',ier)
+    if (ier/=0) PRINT *, trim(myname),'cannot get pointers for fv3 met-fields, ier =',ier
 
     if( fv3sar_bg_opt == 0) then
        call gsi_fv3ncdf_readuv(dynvars,ges_u,ges_v)
@@ -755,17 +756,17 @@ subroutine read_fv3_netcdf_guess(fv3filenamegin)
 !     call gsi_fv3ncdf_read(tracers,'LIQ_WAT','liq_wat',ges_ql,mype_ql)
       call gsi_fv3ncdf_read(tracers,'O3MR','o3mr',ges_oz,mype_oz)
       if( use_fv3_cloud) then
-         call gsi_fv3ncdf_read(tracers,'LIQ_WAT','liq_wat',ges_ql,mype_ql)
-         call gsi_fv3ncdf_read(tracers,'ICE_WAT','ice_wat',ges_qi,mype_qi)
-         call gsi_fv3ncdf_read(tracers,'RAINWAT','rainwat',ges_qr,mype_qr)
-         call gsi_fv3ncdf_read(tracers,'SNOWWAT','snowwat',ges_qs,mype_qs)
-         call gsi_fv3ncdf_read(tracers,'GRAUPEL','graupel',ges_qg,mype_qg)
-         call gsi_fv3ncdf_read(dynvars,'W','w',ges_w,mype_w)
-         call gsi_fv3ncdf_read(tracers,'HAILWAT','hailwat',ges_qh,mype_qh)
-         call gsi_fv3ncdf_read(tracers,'RAIN_NC','rain_nc',ges_qnr,mype_qnr)
-         call gsi_fv3ncdf_read(tracers,'ICE_NC', 'ice_nc',ges_qni,mype_qni)
-         call gsi_fv3ncdf_read(tracers,'WATER_NC','water_nc',ges_qnl,mype_qnl)
-         call gsi_fv3ncdf_read(phyvars,'REF_F3D', 'ref_f3d',ges_dbz,mype_dbz)
+        IF (ASSOCIATED(ges_ql )) call gsi_fv3ncdf_read(tracers,'LIQ_WAT','liq_wat',ges_ql,mype_ql)
+        IF (ASSOCIATED(ges_qi )) call gsi_fv3ncdf_read(tracers,'ICE_WAT','ice_wat',ges_qi,mype_qi)
+        IF (ASSOCIATED(ges_qr )) call gsi_fv3ncdf_read(tracers,'RAINWAT','rainwat',ges_qr,mype_qr)
+        IF (ASSOCIATED(ges_qs )) call gsi_fv3ncdf_read(tracers,'SNOWWAT','snowwat',ges_qs,mype_qs)
+        IF (ASSOCIATED(ges_qg )) call gsi_fv3ncdf_read(tracers,'GRAUPEL','graupel',ges_qg,mype_qg)
+        IF (ASSOCIATED(ges_w  )) call gsi_fv3ncdf_read(dynvars,'W',       'w',     ges_w, mype_w)
+        IF (ASSOCIATED(ges_qh )) call gsi_fv3ncdf_read(tracers,'HAILWAT', 'hailwat', ges_qh,mype_qh)
+        IF (ASSOCIATED(ges_qnr)) call gsi_fv3ncdf_read(tracers,'RAIN_NC', 'rain_nc', ges_qnr,mype_qnr)
+        IF (ASSOCIATED(ges_qni)) call gsi_fv3ncdf_read(tracers,'ICE_NC',  'ice_nc',  ges_qni,mype_qni)
+        IF (ASSOCIATED(ges_qnl)) call gsi_fv3ncdf_read(tracers,'WATER_NC','water_nc',ges_qnl,mype_qnl)
+        IF (ASSOCIATED(ges_dbz)) call gsi_fv3ncdf_read(phyvars,'REF_F3D', 'ref_f3d', ges_dbz,mype_dbz)
       endif
     else
       call gsi_fv3ncdf_read_v1(tracers,'sphum','SPHUM',ges_q,mype_q)
@@ -1374,7 +1375,7 @@ subroutine gsi_fv3ncdf_read(filenamein,varname,varname2,work_sub,mype_io)
 
 
     use kinds, only: r_kind,i_kind
-    use mpimod, only: ierror,mpi_comm_world,npe,mpi_rtype,mype
+    use mpimod, only: ierror,mpi_comm_world,npe,mpi_rtype,mype,mpi_itype
     use gridmod, only: lat2,lon2,nsig,nlat,nlon,itotsub,ijn_s
     use netcdf, only: nf90_open,nf90_close,nf90_get_var,nf90_noerr
     use netcdf, only: nf90_nowrite,nf90_inquire,nf90_inquire_dimension
@@ -1455,6 +1456,13 @@ subroutine gsi_fv3ncdf_read(filenamein,varname,varname2,work_sub,mype_io)
              exit
           endif
        enddo     !   k
+        IF (k > nvariables) THEN
+            WRITE(0,*) 'gsi_fv3ncdf_read: ', trim(varname),' not found. Skipping ...'
+            iret=nf90_close(gfile_loc)
+            deallocate (a,dim)
+            iret = 999
+            GOTO 999
+        END IF
        nz=nsig
        nzp1=nz+1
        do i=1,nz
@@ -1478,8 +1486,15 @@ subroutine gsi_fv3ncdf_read(filenamein,varname,varname2,work_sub,mype_io)
 
     endif !mype
 
-    call mpi_scatterv(work,ijns,displss,mpi_rtype,&
-       work_sub,ijns(mm1),mpi_rtype,mype_io,mpi_comm_world,ierror)
+    999 CONTINUE
+
+    CALL MPI_BCAST(iret,1,mpi_itype,mype_io,MPI_COMM_WORLD,ierror)
+
+    IF (iret == 0) THEN
+        if(mype==mype_io) WRITE(0,*) 'Calling mpi_scatterv for ',TRIM(varname),' with iret = ',iret
+        call mpi_scatterv(work,ijns,displss,mpi_rtype,                  &
+            work_sub,ijns(mm1),mpi_rtype,mype_io,mpi_comm_world,ierror)
+    ENDIF
 
     deallocate (work)
     return
@@ -2022,17 +2037,17 @@ subroutine wrfv3_netcdf(fv3filenamegin)
       !call gsi_fv3ncdf_writeps(dynvars,'delp',ges_ps,mype_p,add_saved)
       call gsi_fv3ncdf_writeps(dynvars,tracers,'delp',ges_ps,ges_q,mype_p,add_saved)
       if(use_fv3_cloud) then
-         call gsi_fv3ncdf_write(dynvars,'W',ges_w   ,mype_w,add_saved)
-         call gsi_fv3ncdf_write(tracers,'liq_wat',ges_ql  ,mype_ql,add_saved)
-         call gsi_fv3ncdf_write(tracers,'rainwat',ges_qr  ,mype_qr,add_saved)
-         call gsi_fv3ncdf_write(tracers,'snowwat',ges_qs  ,mype_qs,add_saved)
-         call gsi_fv3ncdf_write(tracers,'ice_wat',ges_qi  ,mype_qi,add_saved)
-         call gsi_fv3ncdf_write(tracers,'graupel',ges_qg  ,mype_qg,add_saved)
-         call gsi_fv3ncdf_write(tracers,'graupel',ges_qh  ,mype_qh,add_saved)
-         call gsi_fv3ncdf_write(tracers,'graupel',ges_qnr  ,mype_qnr,add_saved)
-         call gsi_fv3ncdf_write(tracers,'graupel',ges_qni  ,mype_qni,add_saved)
-         call gsi_fv3ncdf_write(tracers,'graupel',ges_qnl  ,mype_qnl,add_saved)
-         call gsi_fv3ncdf_write(phyvars,'ref_f3d',ges_dbz ,mype_dbz,add_saved)
+        IF(ASSOCIATED(ges_w  )) call gsi_fv3ncdf_write(dynvars,'W',      ges_w   ,mype_w,add_saved)
+        IF(ASSOCIATED(ges_ql )) call gsi_fv3ncdf_write(tracers,'liq_wat',ges_ql  ,mype_ql,add_saved)
+        IF(ASSOCIATED(ges_qr )) call gsi_fv3ncdf_write(tracers,'rainwat',ges_qr  ,mype_qr,add_saved)
+        IF(ASSOCIATED(ges_qs )) call gsi_fv3ncdf_write(tracers,'snowwat',ges_qs  ,mype_qs,add_saved)
+        IF(ASSOCIATED(ges_qi )) call gsi_fv3ncdf_write(tracers,'ice_wat',ges_qi  ,mype_qi,add_saved)
+        IF(ASSOCIATED(ges_qg )) call gsi_fv3ncdf_write(tracers,'graupel',ges_qg  ,mype_qg,add_saved)
+        IF(ASSOCIATED(ges_qh )) call gsi_fv3ncdf_write(tracers,'hailwat',ges_qh  ,mype_qh,add_saved)
+        IF(ASSOCIATED(ges_qnr)) call gsi_fv3ncdf_write(tracers,'rain_nc',ges_qnr, mype_qnr,add_saved)
+        IF(ASSOCIATED(ges_qni)) call gsi_fv3ncdf_write(tracers,'ice_nc', ges_qni, mype_qni,add_saved)
+        IF(ASSOCIATED(ges_qnl)) call gsi_fv3ncdf_write(tracers,'water_nc',ges_qnl, mype_qnl,add_saved)
+        IF(ASSOCIATED(ges_dbz)) call gsi_fv3ncdf_write(phyvars,'ref_f3d',ges_dbz, mype_dbz,add_saved)
       endif
     else
       call gsi_fv3ncdf_write(dynvars,'t',ges_tsen(1,1,1,it),mype_t,add_saved)
@@ -2863,7 +2878,8 @@ subroutine gsi_fv3ncdf_write(filename,varname,var,mype_io,add_saved)
        if( trim(varname) == 'sphum' .or. trim(varname) == 'liq_wat'   .or. &
            trim(varname) == 'rainwat' .or. trim(varname) == 'ice_wat' .or. &
            trim(varname) == 'ice_wat' .or. trim(varname) == 'graupel' .or. &
-           trim(varname) == 'snowwat' .or. trim(varname) == 'ref_f3d'  )then
+           trim(varname) == 'snowwat' .or. trim(varname) == 'hailwat' .or. &
+           trim(varname) == 'ref_f3d'  )then
           do i = 1, nlon_regional
             do j = 1, nlat_regional
               do k = 1, nsig
